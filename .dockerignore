@@ -1,0 +1,9 @@
+.git
+.gitignore
+.github
+.DS_Store
+node_modules
+*.log
+CLAUDE.md
+deploy.sh
+run.sh
