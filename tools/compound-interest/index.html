@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compound interest calculator · 1618.dev</title>
+  <meta name="description" content="See what a sum grows to when interest itself earns interest. Runs entirely in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Compound interest</h2>
+      <p class="muted">How much does a sum grow when its interest itself earns interest?</p>
+
+      <form id="form" class="card">
+        <label>
+          Principal
+          <input type="number" id="principal" value="1000" min="0" step="any" required />
+        </label>
+        <label>
+          Annual interest rate (%)
+          <input type="number" id="rate" value="5" step="any" required />
+        </label>
+        <label>
+          Years
+          <input type="number" id="years" value="10" min="1" step="1" required />
+        </label>
+        <label>
+          Compounding
+          <select id="frequency">
+            <option value="1">Annually</option>
+            <option value="2">Semi-annually</option>
+            <option value="4">Quarterly</option>
+            <option value="12" selected>Monthly</option>
+            <option value="365">Daily</option>
+            <option value="0">Continuously</option>
+          </select>
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Final amount</span>
+            <span id="final">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Interest earned: <span id="interest">—</span>
+          </p>
+        </div>
+
+        <h3>Year by year</h3>
+        <table>
+          <thead>
+            <tr><th>Year</th><th>Amount</th><th>Interest</th></tr>
+          </thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+
+      <h3>Formula</h3>
+      <div class="formula" id="formula">A = P (1 + r/n)<sup>nt</sup></div>
+      <p class="muted" style="margin-top:0.5rem">
+        P = principal, r = annual rate (decimal), n = compounding periods per year,
+        t = years. For continuous compounding: A = P · e<sup>rt</sup>.
+      </p>
+    </main>
+
+    <footer>
+      <a href="../../">← back to all tools</a>
+    </footer>
+  </div>
+
+  <script>
+    const fmt = new Intl.NumberFormat(undefined, {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+
+      const principal = parseFloat(document.getElementById('principal').value);
+      const rate = parseFloat(document.getElementById('rate').value);
+      const years = parseInt(document.getElementById('years').value, 10);
+      const frequency = parseInt(document.getElementById('frequency').value, 10);
+
+      const proxy = pyodide.runPython(
+        `logic.compound_interest(${principal}, ${rate}, ${years}, ${frequency})`
+      );
+      const result = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+
+      document.getElementById('final').textContent = fmt.format(result.final_amount);
+      document.getElementById('interest').textContent = fmt.format(result.total_interest);
+
+      const formulaEl = document.getElementById('formula');
+      if (frequency === 0) {
+        formulaEl.innerHTML =
+          `A = ${principal} · e<sup>(${rate / 100} · ${years})</sup>`;
+      } else {
+        formulaEl.innerHTML =
+          `A = ${principal} (1 + ${rate / 100}/${frequency})<sup>${frequency}·${years}</sup>`;
+      }
+
+      const tbody = document.getElementById('breakdown');
+      tbody.innerHTML = '';
+      for (const row of result.breakdown) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${row.year}</td>` +
+          `<td>${fmt.format(row.amount)}</td>` +
+          `<td>${fmt.format(row.interest)}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>

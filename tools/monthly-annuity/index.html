@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monthly annuity calculator · 1618.dev</title>
+  <meta name="description" content="Future value of monthly savings, or the level monthly payout from a corpus over N years." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Monthly annuity</h2>
+      <p class="muted">Save a fixed amount each month, or take a fixed monthly payout from a starting corpus.</p>
+
+      <form id="form" class="card">
+        <label>
+          Mode
+          <select id="mode">
+            <option value="save" selected>Save — recurring monthly deposit</option>
+            <option value="withdraw">Withdraw — monthly payout from a corpus</option>
+          </select>
+        </label>
+        <label>
+          <span id="amount-label">Monthly deposit</span>
+          <input type="number" id="amount" value="500" min="0" step="any" required />
+        </label>
+        <label>
+          Annual interest rate (%)
+          <input type="number" id="rate" value="8" step="any" required />
+        </label>
+        <label>
+          Years
+          <input type="number" id="years" value="30" min="1" step="1" required />
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="result-label">Future value</span>
+            <span id="result">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            <span id="total-label">Total contributed</span>: <span id="total">—</span> ·
+            <span id="delta-label">Interest earned</span>: <span id="delta">—</span>
+          </p>
+        </div>
+
+        <h3>Year by year</h3>
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+
+      <h3>Formulas</h3>
+      <div class="formula">
+        Save:&nbsp;&nbsp;&nbsp;&nbsp;FV&nbsp; = PMT · ((1 + r)<sup>n</sup> − 1) / r<br />
+        Withdraw: PMT = PV&nbsp; · r / (1 − (1 + r)<sup>−n</sup>)
+      </div>
+      <p class="muted" style="margin-top:0.5rem">
+        r = monthly rate (annual / 12 / 100), n = number of months (years × 12).
+      </p>
+    </main>
+
+    <footer>
+      <a href="../../">← back to all tools</a>
+    </footer>
+  </div>
+
+  <script>
+    const fmt = new Intl.NumberFormat(undefined, {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function updateAmountLabel() {
+      const mode = document.getElementById('mode').value;
+      document.getElementById('amount-label').textContent =
+        mode === 'save' ? 'Monthly deposit' : 'Starting corpus';
+    }
+
+    function renderTable(columns, rows, getCells) {
+      const thead = document.getElementById('thead');
+      thead.innerHTML = '<tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+      const tbody = document.getElementById('breakdown');
+      tbody.innerHTML = '';
+      for (const row of rows) {
+        const cells = getCells(row);
+        const tr = document.createElement('tr');
+        tr.innerHTML = cells.map((c, i) =>
+          `<td>${i === 0 ? c : fmt.format(c)}</td>`
+        ).join('');
+        tbody.appendChild(tr);
+      }
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+      const a = parseFloat(document.getElementById('amount').value);
+      const r = parseFloat(document.getElementById('rate').value);
+      const y = parseInt(document.getElementById('years').value, 10);
+
+      if (mode === 'save') {
+        const result = pyCall(`logic.annuity_save(${a}, ${r}, ${y})`);
+        document.getElementById('result-label').textContent = 'Future value';
+        document.getElementById('result').textContent = fmt.format(result.future_value);
+        document.getElementById('total-label').textContent = 'Total contributed';
+        document.getElementById('total').textContent = fmt.format(result.total_contributions);
+        document.getElementById('delta-label').textContent = 'Interest earned';
+        document.getElementById('delta').textContent = fmt.format(result.interest_earned);
+        renderTable(
+          ['Year', 'Balance', 'Contributed', 'Interest'],
+          result.breakdown,
+          row => [row.year, row.balance, row.contributed, row.interest]
+        );
+      } else {
+        const result = pyCall(`logic.annuity_withdraw(${a}, ${r}, ${y})`);
+        document.getElementById('result-label').textContent = 'Monthly payout';
+        document.getElementById('result').textContent = fmt.format(result.periodic_payout);
+        document.getElementById('total-label').textContent = 'Total received';
+        document.getElementById('total').textContent = fmt.format(result.total_received);
+        document.getElementById('delta-label').textContent = 'Interest received';
+        document.getElementById('delta').textContent = fmt.format(result.interest_received);
+        renderTable(
+          ['Year', 'Balance', 'Withdrawn'],
+          result.breakdown,
+          row => [row.year, row.balance, row.withdrawn]
+        );
+      }
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('mode').addEventListener('change', updateAmountLabel);
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
