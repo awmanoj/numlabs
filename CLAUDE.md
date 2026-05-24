@@ -66,6 +66,7 @@ new tool**, otherwise it won't be crawled.
 
 ### Health
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial
+- `age-calculator` — Age Calculator (years / months / days / total weeks / total days)
 
 ## Backlog
 
