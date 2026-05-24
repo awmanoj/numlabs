@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Age Calculator — Exact Age in Years, Months & Days | 1618.dev</title>
+  <meta name="description" content="Free age calculator: enter your date of birth and get your exact age in years, months, and days — plus total days, weeks, and months lived. Runs instantly in your browser." />
+  <meta name="keywords" content="age calculator, how old am I, exact age calculator, age in days, age in weeks, age in months, date of birth calculator, birthday calculator, days lived calculator, weeks lived" />
+  <link rel="canonical" href="https://1618.dev/tools/age-calculator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Age Calculator — 1618.dev" />
+  <meta property="og:description" content="Enter your date of birth and instantly see your exact age in years, months, days, weeks, and total days lived." />
+  <meta property="og:url" content="https://1618.dev/tools/age-calculator/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Age Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Exact age in years, months, days, and total weeks or days. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Age Calculator",
+    "description": "Free age calculator. Enter your date of birth to get your exact age in years, months, days, total weeks, and total days lived.",
+    "url": "https://1618.dev/tools/age-calculator/",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Age Calculator</h2>
+      <p class="muted">Enter a date of birth to see the exact age in years, months, days — and more.</p>
+
+      <form id="form" class="card">
+        <label>
+          Date of birth
+          <input type="date" id="dob" required />
+        </label>
+        <label>
+          Age as of
+          <input type="date" id="ref" />
+        </label>
+        <p class="muted" style="margin-top:0.25rem;font-size:0.85rem">
+          Leave "Age as of" blank to use today's date.
+        </p>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Age</span>
+            <span id="age-main">—</span>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;margin-top:1rem">
+            <tbody>
+              <tr>
+                <td class="muted" style="padding:0.35rem 0">Total days</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums" id="total-days">—</td>
+              </tr>
+              <tr>
+                <td class="muted" style="padding:0.35rem 0">Total weeks</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums" id="total-weeks">—</td>
+              </tr>
+              <tr>
+                <td class="muted" style="padding:0.35rem 0">Total months</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums" id="total-months">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        The calculator counts the calendar difference between your date of birth and the
+        reference date (default: today). Years, months, and remaining days are derived
+        by walking backwards through the calendar, accounting for varying month lengths.
+        "Total weeks" is the integer quotient of total days ÷ 7.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        &nbsp;·&nbsp;
+        <a href="../bmi/">BMI calculator</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">age calculator</span>
+        <span class="kw">how old am I</span>
+        <span class="kw">exact age in days</span>
+        <span class="kw">exact age in weeks</span>
+        <span class="kw">exact age in months</span>
+        <span class="kw">date of birth calculator</span>
+        <span class="kw">birthday calculator</span>
+        <span class="kw">days lived calculator</span>
+        <span class="kw">weeks lived</span>
+        <span class="kw">age from DOB</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      // Pre-fill dates
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      document.getElementById('ref').value = todayStr;
+      document.getElementById('ref').max  = todayStr;
+      document.getElementById('dob').max  = todayStr;
+
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function pluralDays(n) {
+      return n === 1 ? '1 day' : `${n} days`;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+
+      const dobVal = document.getElementById('dob').value;
+      if (!dobVal) return;
+
+      const [dy, dm, dd] = dobVal.split('-').map(Number);
+
+      let ry, rm, rd;
+      const refVal = document.getElementById('ref').value;
+      if (refVal) {
+        [ry, rm, rd] = refVal.split('-').map(Number);
+      } else {
+        const t = new Date();
+        ry = t.getFullYear(); rm = t.getMonth() + 1; rd = t.getDate();
+      }
+
+      let result;
+      try {
+        result = pyCall(`logic.age(${dy}, ${dm}, ${dd}, ${ry}, ${rm}, ${rd})`);
+      } catch (err) {
+        alert(err.message || String(err));
+        return;
+      }
+
+      document.getElementById('age-main').textContent =
+        `${result.years} years, ${result.months} months, ${pluralDays(result.days)}`;
+
+      document.getElementById('total-days').textContent =
+        result.total_days.toLocaleString();
+
+      document.getElementById('total-weeks').textContent =
+        `${result.total_weeks.toLocaleString()} weeks + ${pluralDays(result.remaining_days_after_weeks)}`;
+
+      document.getElementById('total-months').textContent =
+        result.total_months.toLocaleString();
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
