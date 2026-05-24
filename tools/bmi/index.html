@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BMI Calculator — Metric & Imperial | 1618.dev</title>
+  <meta name="description" content="Free BMI (Body Mass Index) calculator with metric and imperial units. Shows your BMI, WHO weight category, and the healthy weight range for your height." />
+  <meta name="keywords" content="BMI calculator, body mass index calculator, BMI metric, BMI imperial, healthy weight calculator, ideal weight range, weight category calculator, WHO BMI classification, obesity calculator, underweight calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/bmi/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="BMI Calculator — 1618.dev" />
+  <meta property="og:description" content="Body Mass Index in metric or imperial — with WHO category and your healthy weight range. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/bmi/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="BMI Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Body Mass Index in metric or imperial. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "BMI Calculator",
+    "description": "Free Body Mass Index calculator with metric and imperial units. Shows BMI, the WHO weight category, and the healthy weight range for your height.",
+    "url": "https://1618.dev/tools/bmi/",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>BMI</h2>
+      <p class="muted">Body Mass Index — a rough measure of weight relative to height.</p>
+
+      <form id="form" class="card">
+        <label>
+          Units
+          <select id="units">
+            <option value="metric" selected>Metric (kg, cm)</option>
+            <option value="imperial">Imperial (lb, ft + in)</option>
+          </select>
+        </label>
+        <label>
+          <span id="weight-label">Weight (kg)</span>
+          <input type="number" id="weight" value="70" min="1" step="any" required />
+        </label>
+        <label id="row-cm">
+          Height (cm)
+          <input type="number" id="height-cm" value="175" min="1" step="any" />
+        </label>
+        <label id="row-ft" hidden>
+          Height (ft)
+          <input type="number" id="height-ft" value="5" min="0" step="1" />
+        </label>
+        <label id="row-in" hidden>
+          Height (in)
+          <input type="number" id="height-in" value="9" min="0" step="any" />
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">BMI</span>
+            <span id="bmi-value">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Category: <span id="category">—</span>
+          </p>
+          <p class="muted" style="margin-top:0.25rem">
+            Healthy weight range for your height: <span id="healthy-range">—</span>
+          </p>
+        </div>
+      </div>
+
+      <h3>Formula</h3>
+      <div class="formula">BMI = weight (kg) / height (m)<sup>2</sup></div>
+      <p class="muted" style="margin-top:0.5rem">
+        WHO classification — under 18.5: underweight · 18.5–24.9: normal ·
+        25–29.9: overweight · 30+: obese. BMI is a rough proxy and does not
+        distinguish muscle from fat — interpret with care.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">BMI calculator</span>
+        <span class="kw">body mass index</span>
+        <span class="kw">BMI metric</span>
+        <span class="kw">BMI imperial</span>
+        <span class="kw">healthy weight calculator</span>
+        <span class="kw">ideal weight range</span>
+        <span class="kw">weight category</span>
+        <span class="kw">WHO BMI</span>
+        <span class="kw">obesity check</span>
+        <span class="kw">underweight check</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+    let lastUnits = 'metric';
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function updateUnits() {
+      const units = document.getElementById('units').value;
+      if (units === lastUnits) return;
+
+      const weight = document.getElementById('weight');
+      if (lastUnits === 'metric' && units === 'imperial') {
+        weight.value = (parseFloat(weight.value) * 2.2046226218).toFixed(1);
+        const cm = parseFloat(document.getElementById('height-cm').value);
+        const totalIn = cm * 0.3937007874;
+        const ft = Math.floor(totalIn / 12);
+        document.getElementById('height-ft').value = ft;
+        document.getElementById('height-in').value = (totalIn - ft * 12).toFixed(1);
+      } else {
+        weight.value = (parseFloat(weight.value) / 2.2046226218).toFixed(1);
+        const ft = parseFloat(document.getElementById('height-ft').value);
+        const inches = parseFloat(document.getElementById('height-in').value);
+        document.getElementById('height-cm').value =
+          ((ft * 12 + inches) / 0.3937007874).toFixed(1);
+      }
+
+      document.getElementById('weight-label').textContent =
+        units === 'metric' ? 'Weight (kg)' : 'Weight (lb)';
+      document.getElementById('row-cm').hidden = units !== 'metric';
+      document.getElementById('row-ft').hidden = units === 'metric';
+      document.getElementById('row-in').hidden = units === 'metric';
+
+      lastUnits = units;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const units = document.getElementById('units').value;
+      const weight = parseFloat(document.getElementById('weight').value);
+      let result;
+      let rangeStr;
+
+      if (units === 'metric') {
+        const heightCm = parseFloat(document.getElementById('height-cm').value);
+        result = pyCall(`logic.bmi(${weight}, ${heightCm})`);
+        rangeStr = `${result.healthy_min_kg}–${result.healthy_max_kg} kg`;
+      } else {
+        const ft = parseFloat(document.getElementById('height-ft').value);
+        const inches = parseFloat(document.getElementById('height-in').value);
+        const totalIn = ft * 12 + inches;
+        result = pyCall(`logic.bmi_imperial(${weight}, ${totalIn})`);
+        rangeStr = `${result.healthy_min_lb}–${result.healthy_max_lb} lb`;
+      }
+
+      document.getElementById('bmi-value').textContent = result.bmi.toFixed(1);
+      document.getElementById('category').textContent = result.category;
+      document.getElementById('healthy-range').textContent = rangeStr;
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('units').addEventListener('change', updateUnits);
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>

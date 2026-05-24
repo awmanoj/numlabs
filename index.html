@@ -3,9 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>1618.dev — small tools, one a day</title>
-  <meta name="description" content="A growing collection of small calculators and tools — one committed per day. Python logic runs in your browser via Pyodide." />
+  <title>1618.dev — Free Online Calculators & Math Tools</title>
+  <meta name="description" content="A growing collection of small, free online calculators — compound interest, loan EMI, annuities, and more. One new tool committed to GitHub per day. Runs entirely in your browser." />
+  <meta name="keywords" content="free online calculators, finance calculators, compound interest calculator, loan EMI calculator, annuity calculator, SIP calculator, retirement calculator, math tools, browser calculators" />
+  <link rel="canonical" href="https://1618.dev/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="1618.dev — Free Online Calculators" />
+  <meta property="og:description" content="Small, free finance & math calculators — one new tool per day. Runs entirely in your browser." />
+  <meta property="og:url" content="https://1618.dev/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="1618.dev — Free Online Calculators" />
+  <meta name="twitter:description" content="Small, free finance & math calculators — one new tool per day." />
   <link rel="stylesheet" href="style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "1618.dev",
+    "description": "A growing collection of small, free online calculators. One new tool committed to GitHub per day.",
+    "url": "https://1618.dev/"
+  }
+  </script>
 </head>
 <body>
   <div class="container">
@@ -36,10 +55,31 @@
           </li>
         </ul>
       </section>
+
+      <section class="category">
+        <h2>Health</h2>
+        <ul class="tool-list">
+          <li>
+            <a href="tools/bmi/">BMI calculator</a>
+            <span class="desc">Body Mass Index from weight and height, in metric or imperial units.</span>
+          </li>
+        </ul>
+      </section>
     </main>
 
     <footer>
-      Built in the open. Each tool is a folder of plain HTML, CSS, and a Python <code>logic.py</code> that runs in your browser.
+      <p>Built in the open. Each tool is a folder of plain HTML, CSS, and a Python <code>logic.py</code> that runs in your browser via Pyodide. <a href="https://github.com/awmanoj/numlabs">Source on GitHub</a>.</p>
+      <div class="keywords" aria-label="Topics">
+        <span class="kw">free online calculators</span>
+        <span class="kw">finance calculators</span>
+        <span class="kw">compound interest calculator</span>
+        <span class="kw">EMI calculator</span>
+        <span class="kw">annuity calculator</span>
+        <span class="kw">SIP calculator</span>
+        <span class="kw">retirement planning</span>
+        <span class="kw">math tools</span>
+        <span class="kw">browser calculators</span>
+      </div>
     </footer>
   </div>
 </body>

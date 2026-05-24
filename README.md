@@ -24,6 +24,9 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Annual annuity](tools/annual-annuity/) — yearly save (→ future value) or withdraw (→ annual payout)
 - [Monthly annuity](tools/monthly-annuity/) — monthly save (→ future value) or withdraw (→ monthly payout)
 
+### Health
+- [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
+
 ## Run locally
 
 Each tool fetches its `logic.py` over HTTP, so `file://` will not work. Serve the repo with anything that returns static files. Easiest:
