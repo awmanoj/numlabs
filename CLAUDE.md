@@ -25,6 +25,9 @@ The goal is to ship one new tool per day; do not bulk-build the backlog.
 4. Add a `<url>` entry to `sitemap.xml`.
 5. Sanity-test the logic: `python3 tools/<slug>/logic.py`.
 
+   Templating from an existing tool carries the analytics snippet along (see
+   **Analytics** below) — just confirm it's present in the new `<head>`.
+
 ## SEO conventions
 
 Every tool page (`tools/<slug>/index.html`) must include in its `<head>`:
@@ -55,6 +58,25 @@ Every tool `<footer>` must include:
 The repo root has `robots.txt` (allows all, points to sitemap) and
 `sitemap.xml` (lists every page). **Update `sitemap.xml` when shipping a
 new tool**, otherwise it won't be crawled.
+
+## Analytics
+
+Every page (root + every tool) carries the same GA4 gtag.js snippet, placed
+right after `<meta charset>` in the `<head>`. Measurement ID: `G-1YEEJCL2E6`.
+New tools must include it — it comes for free when you template from an
+existing tool, so just confirm it's present:
+
+```html
+<meta charset="utf-8" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1YEEJCL2E6');
+</script>
+```
 
 ## Implemented — do NOT re-implement
 
