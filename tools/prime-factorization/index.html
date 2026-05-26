@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prime Factorization Calculator — Factors & Divisors | 1618.dev</title>
+  <meta name="description" content="Free prime factorization calculator. Enter any integer up to 10 trillion and instantly see its unique prime factors, all divisors, divisor count, and divisor sum." />
+  <meta name="keywords" content="prime factorization calculator, prime factorisation calculator, prime factors, factor calculator, divisors calculator, number of divisors, sum of divisors, is prime, integer factorization, unique prime decomposition" />
+  <link rel="canonical" href="https://1618.dev/tools/prime-factorization/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Prime Factorization Calculator — 1618.dev" />
+  <meta property="og:description" content="Find the prime factors, all divisors, divisor count, and divisor sum of any integer. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/prime-factorization/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Prime Factorization Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Prime factors, all divisors, divisor count and sum. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Prime Factorization Calculator",
+    "description": "Free prime factorization calculator. Enter an integer to get its unique prime factors, all divisors, divisor count, and divisor sum.",
+    "url": "https://1618.dev/tools/prime-factorization/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Prime Factorization</h2>
+      <p class="muted">Break any integer into its unique product of primes — plus all divisors, divisor count, and divisor sum.</p>
+
+      <form id="form" class="card">
+        <label>
+          Number (integer between 2 and 10,000,000,000,000)
+          <input type="number" id="n" value="360" min="2" max="10000000000000" step="1" required />
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Factorization</span>
+            <span id="expression">—</span>
+          </div>
+          <p class="muted" id="prime-tag" style="margin-top:0.6rem" hidden>This number is prime.</p>
+
+          <table style="margin-top:1rem">
+            <tbody>
+              <tr>
+                <td class="muted">Number of divisors</td>
+                <td style="font-variant-numeric:tabular-nums" id="divisor-count">—</td>
+              </tr>
+              <tr>
+                <td class="muted">Sum of divisors</td>
+                <td style="font-variant-numeric:tabular-nums" id="divisor-sum">—</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 style="margin-top:1.5rem">Divisors</h3>
+          <p id="divisors" style="font-variant-numeric:tabular-nums;word-break:break-word">—</p>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        Every integer greater than 1 has a unique factorization into primes
+        (the fundamental theorem of arithmetic). We strip out factors of 2 and 3
+        first, then trial-divide by candidates of the form 6k ± 1 up to √n —
+        all composites have a prime factor ≤ √n, so anything left after that
+        loop is itself prime. From the prime powers we generate every divisor
+        and compute divisor count and sum.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">prime factorization</span>
+        <span class="kw">prime factorisation</span>
+        <span class="kw">prime factors</span>
+        <span class="kw">factor calculator</span>
+        <span class="kw">divisors of a number</span>
+        <span class="kw">number of divisors</span>
+        <span class="kw">sum of divisors</span>
+        <span class="kw">is this number prime</span>
+        <span class="kw">integer factorization</span>
+        <span class="kw">unique prime decomposition</span>
+        <span class="kw">fundamental theorem of arithmetic</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Factorize';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function renderExpression(factors) {
+      // factors: [[p, e], ...] — JS array of arrays
+      return factors.map(([p, e]) =>
+        e > 1
+          ? `${p.toLocaleString()}<sup>${e}</sup>`
+          : p.toLocaleString()
+      ).join(' × ');
+    }
+
+    function renderDivisors(divisors) {
+      // Cap to avoid dumping thousands of numbers into the DOM.
+      const CAP = 200;
+      const formatted = divisors.slice(0, CAP).map(d => d.toLocaleString());
+      let html = formatted.join(', ');
+      if (divisors.length > CAP) {
+        html += `, … (${(divisors.length - CAP).toLocaleString()} more)`;
+      }
+      return html;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const n = parseInt(document.getElementById('n').value, 10);
+      if (!Number.isFinite(n)) return;
+
+      let result;
+      try {
+        result = pyCall(`logic.factorize(${n})`);
+      } catch (err) {
+        alert(err.message || String(err));
+        return;
+      }
+
+      document.getElementById('expression').innerHTML =
+        `${result.n.toLocaleString()} = ${renderExpression(result.factors)}`;
+      document.getElementById('prime-tag').hidden = !result.is_prime;
+      document.getElementById('divisor-count').textContent =
+        result.divisor_count.toLocaleString();
+      document.getElementById('divisor-sum').textContent =
+        result.divisor_sum.toLocaleString();
+      document.getElementById('divisors').innerHTML =
+        renderDivisors(result.divisors);
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>

@@ -68,6 +68,9 @@ new tool**, otherwise it won't be crawled.
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial
 - `age-calculator` — Age Calculator (years / months / days / total weeks / total days)
 
+### Maths
+- `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
+
 ## Backlog
 
 _(empty — ask the user what to build next)_

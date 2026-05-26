@@ -28,6 +28,9 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
 - [Age calculator](tools/age-calculator/) — exact age in years, months, days; total days, weeks, and months
 
+### Maths
+- [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
+
 ## Run locally
 
 Each tool fetches its `logic.py` over HTTP, so `file://` will not work. Serve the repo with anything that returns static files. Easiest:
