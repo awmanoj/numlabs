@@ -30,6 +30,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 
 ### Maths
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
+- [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)
 
 ## Run locally
 

@@ -92,6 +92,7 @@ existing tool, so just confirm it's present:
 
 ### Maths
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
+- `roman-numeral` — Roman Numeral Converter (number ↔ Roman, 1–3999)
 
 ## Backlog
 

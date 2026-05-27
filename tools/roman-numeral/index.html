@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roman Numeral Converter — Number to Roman & Back | 1618.dev</title>
+  <meta name="description" content="Free Roman numeral converter. Turn any number from 1 to 3999 into Roman numerals, or decode a Roman numeral back to a number. Instant, runs in your browser." />
+  <meta name="keywords" content="roman numeral converter, roman numerals, number to roman numerals, roman numeral to number, convert roman numerals, roman numeral chart, decimal to roman, roman numeral translator, roman numeral calculator, how to write roman numerals" />
+  <link rel="canonical" href="https://1618.dev/tools/roman-numeral/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Roman Numeral Converter — 1618.dev" />
+  <meta property="og:description" content="Convert numbers to Roman numerals and back, 1 to 3999. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/roman-numeral/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Roman Numeral Converter — 1618.dev" />
+  <meta name="twitter:description" content="Number to Roman numerals and back, 1 to 3999. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Roman Numeral Converter",
+    "description": "Free Roman numeral converter. Convert any integer from 1 to 3999 to Roman numerals, or decode a Roman numeral back to a number.",
+    "url": "https://1618.dev/tools/roman-numeral/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Roman numeral converter</h2>
+      <p class="muted">Convert a number into Roman numerals, or decode a Roman numeral back into a number. Works for 1 to 3999.</p>
+
+      <form id="form" class="card">
+        <label>
+          Mode
+          <select id="mode">
+            <option value="to" selected>Number → Roman numeral</option>
+            <option value="from">Roman numeral → Number</option>
+          </select>
+        </label>
+        <label id="num-field">
+          Number (1 to 3999)
+          <input type="number" id="num" value="2024" min="1" max="3999" step="1" />
+        </label>
+        <label id="roman-field" hidden>
+          Roman numeral
+          <input type="text" id="roman" value="MMXXIV" autocapitalize="characters" autocomplete="off" spellcheck="false" />
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="result-label">Roman numeral</span>
+            <span id="result" style="word-break:break-word">—</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>How Roman numerals work</h3>
+      <p class="muted">
+        Seven letters carry fixed values: I = 1, V = 5, X = 10, L = 50,
+        C = 100, D = 500, M = 1000. Symbols are written largest-first and
+        added together, except for six subtractive pairs — IV (4), IX (9),
+        XL (40), XC (90), CD (400) and CM (900) — where a smaller letter
+        before a larger one is subtracted. Standard notation tops out at
+        3999 (MMMCMXCIX); larger numbers need an overline, which plain
+        text can't show.
+      </p>
+
+      <table style="margin-top:1rem">
+        <thead>
+          <tr><th>Symbol</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>I</td><td style="font-variant-numeric:tabular-nums">1</td></tr>
+          <tr><td>V</td><td style="font-variant-numeric:tabular-nums">5</td></tr>
+          <tr><td>X</td><td style="font-variant-numeric:tabular-nums">10</td></tr>
+          <tr><td>L</td><td style="font-variant-numeric:tabular-nums">50</td></tr>
+          <tr><td>C</td><td style="font-variant-numeric:tabular-nums">100</td></tr>
+          <tr><td>D</td><td style="font-variant-numeric:tabular-nums">500</td></tr>
+          <tr><td>M</td><td style="font-variant-numeric:tabular-nums">1000</td></tr>
+        </tbody>
+      </table>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">roman numeral converter</span>
+        <span class="kw">roman numerals</span>
+        <span class="kw">number to roman numerals</span>
+        <span class="kw">roman numeral to number</span>
+        <span class="kw">convert roman numerals</span>
+        <span class="kw">roman numeral chart</span>
+        <span class="kw">decimal to roman</span>
+        <span class="kw">roman numeral translator</span>
+        <span class="kw">how to write roman numerals</span>
+        <span class="kw">roman numeral calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Convert';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = typeof proxy === 'object' && proxy.toJs ? proxy.toJs() : proxy;
+      if (proxy && proxy.destroy) proxy.destroy();
+      return value;
+    }
+
+    function updateMode() {
+      const mode = document.getElementById('mode').value;
+      const toMode = mode === 'to';
+      document.getElementById('num-field').hidden = !toMode;
+      document.getElementById('roman-field').hidden = toMode;
+      document.getElementById('output').hidden = true;
+    }
+
+    function pyStr(s) {
+      // Safe Python string literal: only A-Z get through after the filter,
+      // but escape defensively anyway.
+      return "'" + s.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+
+      try {
+        if (mode === 'to') {
+          const n = parseInt(document.getElementById('num').value, 10);
+          if (!Number.isFinite(n)) throw new Error('Enter a whole number');
+          const roman = pyCall(`logic.to_roman(${n})`);
+          document.getElementById('result-label').textContent = 'Roman numeral';
+          document.getElementById('result').textContent = roman;
+        } else {
+          const raw = document.getElementById('roman').value.trim().toUpperCase();
+          const n = pyCall(`logic.from_roman(${pyStr(raw)})`);
+          document.getElementById('result-label').textContent = 'Number';
+          document.getElementById('result').textContent = n.toLocaleString();
+        }
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+        return;
+      }
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('mode').addEventListener('change', updateMode);
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
