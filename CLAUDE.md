@@ -85,6 +85,7 @@ existing tool, so just confirm it's present:
 - `loan-emi` — Loan EMI Calculator
 - `annual-annuity` — Annual Annuity Calculator (save + withdraw modes)
 - `monthly-annuity` — Monthly Annuity Calculator (save + withdraw modes)
+- `currency-converter` — Currency Converter (live ECB rates via Frankfurter API; 30+ currencies)
 
 ### Health
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial

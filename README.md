@@ -25,6 +25,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Loan EMI](tools/loan-emi/) — monthly installment + amortization for a fixed-rate loan
 - [Annual annuity](tools/annual-annuity/) — yearly save (→ future value) or withdraw (→ annual payout)
 - [Monthly annuity](tools/monthly-annuity/) — monthly save (→ future value) or withdraw (→ monthly payout)
+- [Currency converter](tools/currency-converter/) — live forex rates between 30+ currencies, from European Central Bank reference rates
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)

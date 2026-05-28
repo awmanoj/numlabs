@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Currency Converter — Live Forex Rates (ECB) | 1618.dev</title>
+  <meta name="description" content="Free live currency converter using European Central Bank reference rates. Convert between 30+ major currencies — USD, EUR, GBP, INR, JPY and more — with the exchange rate and inverse rate shown." />
+  <meta name="keywords" content="currency converter, live forex rates, exchange rate calculator, ECB reference rates, USD to EUR, EUR to USD, USD to INR, GBP to USD, JPY to USD, foreign exchange calculator, money converter, FX calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/currency-converter/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Currency Converter — 1618.dev" />
+  <meta property="og:description" content="Live currency conversion across 30+ currencies, powered by European Central Bank reference rates. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/currency-converter/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Currency Converter — 1618.dev" />
+  <meta name="twitter:description" content="Live forex rates from the European Central Bank. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Currency Converter",
+    "description": "Free live currency converter across 30+ major currencies, using European Central Bank reference rates served by the Frankfurter API.",
+    "url": "https://1618.dev/tools/currency-converter/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Currency converter</h2>
+      <p class="muted">Live exchange rates from the European Central Bank (via the Frankfurter API).</p>
+
+      <form id="form" class="card">
+        <label>
+          Amount
+          <input type="number" id="amount" value="100" min="0" step="any" required />
+        </label>
+        <label>
+          From
+          <select id="from"></select>
+        </label>
+        <label>
+          To
+          <select id="to"></select>
+        </label>
+        <button type="button" id="swap" class="secondary">Swap ↔</button>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="result-label">—</span>
+            <span id="converted">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            <span id="rate-line">—</span><br />
+            <span id="inverse-line">—</span><br />
+            <span id="asof-line">—</span>
+          </p>
+        </div>
+      </div>
+
+      <div id="error" class="card" hidden style="border-color:#c33;color:#c33">
+        <strong>Could not fetch the live rate.</strong>
+        <p class="muted" id="error-detail" style="margin-top:0.4rem"></p>
+      </div>
+
+      <h3>About the data</h3>
+      <p class="muted">
+        Rates come from the European Central Bank's daily reference rates,
+        served by <a href="https://frankfurter.dev" rel="noopener">Frankfurter</a>.
+        The ECB publishes one set of rates per working day around 16:00 CET, so
+        the value shown is the most recent <em>reference</em> rate — not a
+        real-time mid-market quote. Don't use it for live trading.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../loan-emi/">Loan EMI</a>
+        <a href="../annual-annuity/">Annual annuity</a>
+        <a href="../monthly-annuity/">Monthly annuity</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">currency converter</span>
+        <span class="kw">live forex rates</span>
+        <span class="kw">exchange rate calculator</span>
+        <span class="kw">USD to EUR</span>
+        <span class="kw">EUR to USD</span>
+        <span class="kw">USD to INR</span>
+        <span class="kw">GBP to USD</span>
+        <span class="kw">JPY to USD</span>
+        <span class="kw">ECB reference rates</span>
+        <span class="kw">foreign exchange calculator</span>
+        <span class="kw">money converter</span>
+        <span class="kw">FX calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const CURRENCIES = [
+      ["AUD", "Australian Dollar"],
+      ["BRL", "Brazilian Real"],
+      ["CAD", "Canadian Dollar"],
+      ["CHF", "Swiss Franc"],
+      ["CNY", "Chinese Renminbi Yuan"],
+      ["CZK", "Czech Koruna"],
+      ["DKK", "Danish Krone"],
+      ["EUR", "Euro"],
+      ["GBP", "British Pound"],
+      ["HKD", "Hong Kong Dollar"],
+      ["HUF", "Hungarian Forint"],
+      ["IDR", "Indonesian Rupiah"],
+      ["ILS", "Israeli New Shekel"],
+      ["INR", "Indian Rupee"],
+      ["ISK", "Icelandic Króna"],
+      ["JPY", "Japanese Yen"],
+      ["KRW", "South Korean Won"],
+      ["MXN", "Mexican Peso"],
+      ["MYR", "Malaysian Ringgit"],
+      ["NOK", "Norwegian Krone"],
+      ["NZD", "New Zealand Dollar"],
+      ["PHP", "Philippine Peso"],
+      ["PLN", "Polish Złoty"],
+      ["RON", "Romanian Leu"],
+      ["SEK", "Swedish Krona"],
+      ["SGD", "Singapore Dollar"],
+      ["THB", "Thai Baht"],
+      ["TRY", "Turkish Lira"],
+      ["USD", "United States Dollar"],
+      ["ZAR", "South African Rand"],
+    ];
+
+    function fmt(n, decimals) {
+      return new Intl.NumberFormat(undefined, {
+        style: "decimal",
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(n);
+    }
+
+    function fillSelects() {
+      const fromSel = document.getElementById("from");
+      const toSel = document.getElementById("to");
+      for (const [code, name] of CURRENCIES) {
+        const o1 = document.createElement("option");
+        o1.value = code;
+        o1.textContent = `${code} — ${name}`;
+        fromSel.appendChild(o1);
+        const o2 = o1.cloneNode(true);
+        toSel.appendChild(o2);
+      }
+      fromSel.value = "USD";
+      toSel.value = "EUR";
+    }
+
+    let pyodide;
+
+    async function init() {
+      fillSelects();
+      pyodide = await loadPyodide();
+      const code = await fetch("logic.py").then((r) => r.text());
+      pyodide.FS.writeFile("logic.py", code);
+      pyodide.runPython("import logic");
+      const btn = document.getElementById("go");
+      btn.textContent = "Convert";
+      btn.disabled = false;
+    }
+
+    async function fetchRate(from, to) {
+      if (from === to) {
+        return { rate: 1.0, date: new Date().toISOString().slice(0, 10) };
+      }
+      const url = `https://api.frankfurter.dev/v1/latest?base=${from}&symbols=${to}`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      const data = await resp.json();
+      const rate = data.rates && data.rates[to];
+      if (typeof rate !== "number") {
+        throw new Error(`No rate for ${to} in response`);
+      }
+      return { rate, date: data.date };
+    }
+
+    async function calculate(e) {
+      e.preventDefault();
+      document.getElementById("error").hidden = true;
+
+      const amount = parseFloat(document.getElementById("amount").value);
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+
+      const btn = document.getElementById("go");
+      btn.disabled = true;
+      btn.textContent = "Fetching rate…";
+
+      try {
+        const { rate, date } = await fetchRate(from, to);
+        const proxy = pyodide.runPython(
+          `logic.convert(${amount}, ${rate}, "${from}", "${to}")`
+        );
+        const result = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+
+        document.getElementById("result-label").textContent =
+          `${fmt(amount, 2)} ${from} =`;
+        document.getElementById("converted").textContent =
+          `${fmt(result.converted, result.decimals)} ${to}`;
+        document.getElementById("rate-line").textContent =
+          `1 ${from} = ${fmt(result.rate, result.rate_decimals)} ${to}`;
+        document.getElementById("inverse-line").textContent =
+          `1 ${to} = ${fmt(result.inverse_rate, result.inverse_decimals)} ${from}`;
+        document.getElementById("asof-line").textContent =
+          from === to
+            ? "Same currency — rate is 1."
+            : `ECB reference rate as of ${date}.`;
+        document.getElementById("output").hidden = false;
+      } catch (err) {
+        document.getElementById("error-detail").textContent =
+          err && err.message ? err.message : String(err);
+        document.getElementById("error").hidden = false;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Convert";
+      }
+    }
+
+    function swap() {
+      const f = document.getElementById("from");
+      const t = document.getElementById("to");
+      const tmp = f.value;
+      f.value = t.value;
+      t.value = tmp;
+    }
+
+    document.getElementById("form").addEventListener("submit", calculate);
+    document.getElementById("swap").addEventListener("click", swap);
+    init();
+  </script>
+</body>
+</html>

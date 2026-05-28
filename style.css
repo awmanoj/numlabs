@@ -115,6 +115,11 @@ button {
   justify-self: start;
 }
 button:disabled { opacity: 0.55; cursor: progress; }
+button.secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
 
 .result {
   font-size: 2.1rem;
