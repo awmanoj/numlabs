@@ -32,6 +32,9 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
 - [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)
 
+### Science
+- [pH / acid-base calculator](tools/ph-acid-base/) — pH, pOH, [H⁺] and [OH⁻]; pH of strong and weak acids and bases from concentration and Ka / Kb
+
 ## Run locally
 
 Each tool fetches its `logic.py` over HTTP, so `file://` will not work. Serve the repo with anything that returns static files. Easiest:

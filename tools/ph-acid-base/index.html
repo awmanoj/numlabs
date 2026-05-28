@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>pH Calculator — Acid, Base, Ka, Kb | 1618.dev</title>
+  <meta name="description" content="Free pH calculator. Convert between pH, pOH, [H+] and [OH-], or compute the pH of a strong or weak acid or base from its concentration and Ka or Kb. Runs in your browser." />
+  <meta name="keywords" content="pH calculator, acid base calculator, pOH calculator, hydrogen ion concentration calculator, hydroxide ion concentration, strong acid pH, strong base pH, weak acid pH, Ka calculator, Kb calculator, pH from molarity, pH chemistry calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/ph-acid-base/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="pH Calculator — 1618.dev" />
+  <meta property="og:description" content="pH, pOH, [H+], [OH-]. pH of strong and weak acids and bases from concentration and Ka/Kb. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/ph-acid-base/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="pH Calculator — 1618.dev" />
+  <meta name="twitter:description" content="pH, pOH, [H+], [OH-], and pH of acids and bases from concentration. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "pH / Acid-Base Calculator",
+    "description": "Free pH calculator. Convert between pH, pOH, [H+] and [OH-], or compute the pH of strong and weak acids and bases from concentration and Ka or Kb.",
+    "url": "https://1618.dev/tools/ph-acid-base/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>pH / acid-base calculator</h2>
+      <p class="muted">Convert between pH, pOH, [H<sup>+</sup>] and [OH<sup>-</sup>], or compute the pH of a strong or weak acid or base from its concentration. Uses K<sub>w</sub> = 1.0 &times; 10<sup>-14</sup> at 25&nbsp;&deg;C.</p>
+
+      <form id="form" class="card">
+        <label>
+          Mode
+          <select id="mode">
+            <option value="strong-acid" selected>Strong acid concentration &rarr; pH</option>
+            <option value="strong-base">Strong base concentration &rarr; pH</option>
+            <option value="weak-acid">Weak acid (Ka, C) &rarr; pH</option>
+            <option value="weak-base">Weak base (Kb, C) &rarr; pH</option>
+            <option value="from-ph">pH &rarr; pOH, [H+], [OH-]</option>
+            <option value="from-poh">pOH &rarr; pH, [H+], [OH-]</option>
+            <option value="from-h">[H+] &rarr; pH, pOH, [OH-]</option>
+            <option value="from-oh">[OH-] &rarr; pH, pOH, [H+]</option>
+          </select>
+        </label>
+
+        <label id="field-ph" hidden>
+          pH
+          <input type="number" id="ph" value="7" min="0" max="14" step="any" />
+        </label>
+        <label id="field-poh" hidden>
+          pOH
+          <input type="number" id="poh" value="7" min="0" max="14" step="any" />
+        </label>
+        <label id="field-h" hidden>
+          [H<sup>+</sup>] (mol/L)
+          <input type="number" id="h" value="1e-7" min="0" step="any" />
+        </label>
+        <label id="field-oh" hidden>
+          [OH<sup>-</sup>] (mol/L)
+          <input type="number" id="oh" value="1e-7" min="0" step="any" />
+        </label>
+        <label id="field-k" hidden>
+          <span id="k-label">Ka</span>
+          <input type="number" id="k" value="1.8e-5" min="0" step="any" />
+        </label>
+        <label id="field-conc" hidden>
+          Concentration (mol/L)
+          <input type="number" id="conc" value="0.01" min="0" step="any" />
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python&hellip;</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">pH</span>
+            <span id="r-ph">&mdash;</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Classification: <span id="r-class">&mdash;</span>
+          </p>
+          <table style="margin-top:1rem">
+            <tbody>
+              <tr><td>pOH</td><td id="r-poh" style="font-variant-numeric:tabular-nums">&mdash;</td></tr>
+              <tr><td>[H<sup>+</sup>]</td><td id="r-h" style="font-variant-numeric:tabular-nums">&mdash;</td></tr>
+              <tr><td>[OH<sup>-</sup>]</td><td id="r-oh" style="font-variant-numeric:tabular-nums">&mdash;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>Formulas</h3>
+      <div class="formula">pH = -log<sub>10</sub>([H<sup>+</sup>])</div>
+      <div class="formula" style="margin-top:0.4rem">pOH = -log<sub>10</sub>([OH<sup>-</sup>])</div>
+      <div class="formula" style="margin-top:0.4rem">[H<sup>+</sup>] &times; [OH<sup>-</sup>] = K<sub>w</sub> = 10<sup>-14</sup>&nbsp;&nbsp;&rarr;&nbsp;&nbsp;pH + pOH = 14</div>
+      <p class="muted" style="margin-top:0.6rem">
+        <strong>Strong acid / base.</strong> A strong acid fully dissociates, so
+        [H<sup>+</sup>] equals its concentration &mdash; except in very dilute
+        solutions, where water's own contribution matters. The solver uses
+        [H<sup>+</sup>]<sup>2</sup> - c[H<sup>+</sup>] - K<sub>w</sub> = 0 so the
+        answer stays correct down to ~10<sup>-8</sup> M.
+      </p>
+      <p class="muted" style="margin-top:0.4rem">
+        <strong>Weak acid.</strong> For HA &rlhar; H<sup>+</sup> + A<sup>-</sup>,
+        the equilibrium x<sup>2</sup> + K<sub>a</sub>x - K<sub>a</sub>C = 0 is
+        solved exactly &mdash; no &ldquo;x &laquo; C&rdquo; approximation.
+        Weak base mode uses the same shape with K<sub>b</sub> and
+        [OH<sup>-</sup>] in place of K<sub>a</sub> and [H<sup>+</sup>].
+      </p>
+      <p class="muted" style="margin-top:0.4rem">
+        Common reference values at 25&nbsp;&deg;C: acetic acid
+        K<sub>a</sub> = 1.8 &times; 10<sup>-5</sup>, ammonia K<sub>b</sub> = 1.8
+        &times; 10<sup>-5</sup>, formic acid K<sub>a</sub> = 1.8 &times;
+        10<sup>-4</sup>, hydrofluoric acid K<sub>a</sub> = 6.6 &times;
+        10<sup>-4</sup>.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">&larr; all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">pH calculator</span>
+        <span class="kw">acid base calculator</span>
+        <span class="kw">pOH calculator</span>
+        <span class="kw">hydrogen ion concentration</span>
+        <span class="kw">hydroxide ion concentration</span>
+        <span class="kw">strong acid pH</span>
+        <span class="kw">strong base pH</span>
+        <span class="kw">weak acid pH</span>
+        <span class="kw">Ka calculator</span>
+        <span class="kw">Kb calculator</span>
+        <span class="kw">pH from molarity</span>
+        <span class="kw">chemistry pH calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    // mode -> [field ids to show, k-label (or null)]
+    const MODES = {
+      'strong-acid': { fields: ['field-conc'], k: null },
+      'strong-base': { fields: ['field-conc'], k: null },
+      'weak-acid':   { fields: ['field-k', 'field-conc'], k: 'Ka' },
+      'weak-base':   { fields: ['field-k', 'field-conc'], k: 'Kb' },
+      'from-ph':     { fields: ['field-ph'], k: null },
+      'from-poh':    { fields: ['field-poh'], k: null },
+      'from-h':      { fields: ['field-h'], k: null },
+      'from-oh':     { fields: ['field-oh'], k: null },
+    };
+
+    const ALL_FIELDS = ['field-ph', 'field-poh', 'field-h', 'field-oh', 'field-k', 'field-conc'];
+
+    function updateMode() {
+      const mode = document.getElementById('mode').value;
+      const cfg = MODES[mode];
+      for (const id of ALL_FIELDS) {
+        document.getElementById(id).hidden = !cfg.fields.includes(id);
+      }
+      if (cfg.k) document.getElementById('k-label').textContent = cfg.k;
+      document.getElementById('output').hidden = true;
+    }
+
+    const SUP = { '-': '⁻', '+': '', '0': '⁰', '1': '¹', '2': '²',
+                  '3': '³', '4': '⁴', '5': '⁵', '6': '⁶',
+                  '7': '⁷', '8': '⁸', '9': '⁹' };
+
+    function fmtSci(x) {
+      if (!Number.isFinite(x)) return '—';
+      if (x === 0) return '0';
+      const [m, e] = x.toExponential(3).split('e');
+      const exp = String(parseInt(e, 10)).split('').map(c => SUP[c] ?? c).join('');
+      return `${m} × 10${exp} mol/L`;
+    }
+
+    function val(id) {
+      const n = parseFloat(document.getElementById(id).value);
+      if (!Number.isFinite(n)) throw new Error('Enter a valid number');
+      return n;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+      let expr;
+      try {
+        if (mode === 'strong-acid')      expr = `logic.strong_acid(${val('conc')})`;
+        else if (mode === 'strong-base') expr = `logic.strong_base(${val('conc')})`;
+        else if (mode === 'weak-acid')   expr = `logic.weak_acid(${val('k')}, ${val('conc')})`;
+        else if (mode === 'weak-base')   expr = `logic.weak_base(${val('k')}, ${val('conc')})`;
+        else if (mode === 'from-ph')     expr = `logic.from_ph(${val('ph')})`;
+        else if (mode === 'from-poh')    expr = `logic.from_poh(${val('poh')})`;
+        else if (mode === 'from-h')      expr = `logic.from_h(${val('h')})`;
+        else if (mode === 'from-oh')     expr = `logic.from_oh(${val('oh')})`;
+
+        const r = pyCall(expr);
+        document.getElementById('r-ph').textContent = r.pH.toFixed(4);
+        document.getElementById('r-poh').textContent = r.pOH.toFixed(4);
+        document.getElementById('r-h').textContent = fmtSci(r.H);
+        document.getElementById('r-oh').textContent = fmtSci(r.OH);
+        document.getElementById('r-class').textContent = r.classification;
+        document.getElementById('output').hidden = false;
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+      }
+    }
+
+    document.getElementById('mode').addEventListener('change', updateMode);
+    document.getElementById('form').addEventListener('submit', calculate);
+    updateMode();
+    init();
+  </script>
+</body>
+</html>

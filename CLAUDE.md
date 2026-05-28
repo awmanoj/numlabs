@@ -94,6 +94,9 @@ existing tool, so just confirm it's present:
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
 - `roman-numeral` — Roman Numeral Converter (number ↔ Roman, 1–3999)
 
+### Science
+- `ph-acid-base` — pH / acid-base calculator (pH ↔ pOH ↔ [H⁺] ↔ [OH⁻]; strong/weak acid/base pH from concentration and Ka/Kb)
+
 ## Backlog
 
 _(empty — ask the user what to build next)_
