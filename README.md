@@ -2,7 +2,7 @@
 
 Small calculators and tools — one committed to GitHub per day.
 
-Live at <https://1618.xoxoiris.com/> — try any tool there in the browser.
+Live at <https://1618.reg32.dev/> — try any tool there in the browser.
 
 Pure static site. Each tool's logic is written in Python (`logic.py`) and runs in the browser via [Pyodide](https://pyodide.org). No server, no build step.
 
