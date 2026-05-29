@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Triangle Solver — Sides, Angles, Area (SSS, SAS, ASA, AAS, SSA) | 1618.dev</title>
+  <meta name="description" content="Free triangle solver. Enter any three pieces — SSS, SAS, ASA, AAS or SSA — and get the remaining sides and angles, perimeter, and area via law of cosines and law of sines." />
+  <meta name="keywords" content="triangle solver, triangle calculator, law of cosines calculator, law of sines calculator, SSS triangle, SAS triangle, ASA triangle, AAS triangle, SSA ambiguous case, solve a triangle, find missing side, find missing angle, triangle area calculator, oblique triangle calculator, trigonometry calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/triangle-solver/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Triangle Solver — 1618.dev" />
+  <meta property="og:description" content="Solve any triangle from SSS, SAS, ASA, AAS or SSA inputs. Sides, angles, perimeter, area. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/triangle-solver/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Triangle Solver — 1618.dev" />
+  <meta name="twitter:description" content="Solve any triangle: SSS, SAS, ASA, AAS, SSA. Sides, angles, area. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Triangle Solver",
+    "description": "Free triangle solver. Given any three of the six parts (SSS, SAS, ASA, AAS or SSA), compute the remaining sides and angles, perimeter and area via the law of cosines and law of sines.",
+    "url": "https://1618.dev/tools/triangle-solver/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Triangle solver</h2>
+      <p class="muted">Enter any three parts of a triangle and get the rest. Convention: side <em>a</em> is opposite angle <em>A</em>, side <em>b</em> opposite <em>B</em>, side <em>c</em> opposite <em>C</em>. Angles are in degrees.</p>
+
+      <form id="form" class="card">
+        <label>
+          Given
+          <select id="mode">
+            <option value="sss" selected>SSS — three sides</option>
+            <option value="sas">SAS — two sides + included angle</option>
+            <option value="asa">ASA — two angles + included side</option>
+            <option value="aas">AAS — two angles + non-included side</option>
+            <option value="ssa">SSA — two sides + non-included angle (ambiguous)</option>
+          </select>
+        </label>
+
+        <label>
+          <span id="f1-name">Side a</span>
+          <input type="number" id="f1" value="3" step="any" />
+        </label>
+        <label>
+          <span id="f2-name">Side b</span>
+          <input type="number" id="f2" value="4" step="any" />
+        </label>
+        <label>
+          <span id="f3-name">Side c</span>
+          <input type="number" id="f3" value="5" step="any" />
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden></div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        With three sides (SSS) we solve each angle directly from the
+        <strong>law of cosines</strong>, cos <em>A</em> = (<em>b</em><sup>2</sup> + <em>c</em><sup>2</sup> − <em>a</em><sup>2</sup>) / 2<em>bc</em>.
+        With two sides and the included angle (SAS) the law of cosines gives the
+        third side; the remaining angles follow.
+        With two angles and any side (ASA / AAS) the third angle is
+        180° − <em>A</em> − <em>B</em> and the missing sides come from the
+        <strong>law of sines</strong>, <em>a</em> / sin <em>A</em> = <em>b</em> / sin <em>B</em> = <em>c</em> / sin <em>C</em>.
+      </p>
+      <p class="muted">
+        <strong>SSA is the ambiguous case.</strong> Given side <em>a</em>, side
+        <em>b</em>, and angle <em>A</em> opposite <em>a</em>, there can be
+        zero, one, or two valid triangles depending on whether
+        <em>b</em>·sin <em>A</em> is greater than, equal to, or less than
+        <em>a</em>. Both solutions are shown when they exist.
+      </p>
+      <p class="muted">
+        Area uses <strong>Heron's formula</strong>:
+        with <em>s</em> = (<em>a</em> + <em>b</em> + <em>c</em>) / 2,
+        area = √(<em>s</em>(<em>s</em>−<em>a</em>)(<em>s</em>−<em>b</em>)(<em>s</em>−<em>c</em>)).
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../roman-numeral/">Roman numeral converter</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">triangle solver</span>
+        <span class="kw">triangle calculator</span>
+        <span class="kw">law of cosines calculator</span>
+        <span class="kw">law of sines calculator</span>
+        <span class="kw">SSS triangle</span>
+        <span class="kw">SAS triangle</span>
+        <span class="kw">ASA triangle</span>
+        <span class="kw">AAS triangle</span>
+        <span class="kw">SSA ambiguous case</span>
+        <span class="kw">solve a triangle</span>
+        <span class="kw">find missing side of triangle</span>
+        <span class="kw">find missing angle of triangle</span>
+        <span class="kw">triangle area calculator</span>
+        <span class="kw">Heron's formula</span>
+        <span class="kw">oblique triangle calculator</span>
+        <span class="kw">trigonometry calculator</span>
+        <span class="kw">right triangle</span>
+        <span class="kw">acute triangle</span>
+        <span class="kw">obtuse triangle</span>
+        <span class="kw">equilateral triangle</span>
+        <span class="kw">isosceles triangle</span>
+        <span class="kw">scalene triangle</span>
+        <span class="kw">perimeter of triangle</span>
+        <span class="kw">interior angles</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Each mode lists its three input slots as [pythonKey, label, defaultValue, kind]
+    // kind is "side" or "angle" — drives the suffix shown ("(°)") and validation.
+    const MODES = {
+      sss: [
+        ["a", "Side a", 3, "side"],
+        ["b", "Side b", 4, "side"],
+        ["c", "Side c", 5, "side"],
+      ],
+      sas: [
+        ["b", "Side b", 5, "side"],
+        ["A", "Angle A — between b and c (°)", 60, "angle"],
+        ["c", "Side c", 7, "side"],
+      ],
+      asa: [
+        ["A", "Angle A (°)", 50, "angle"],
+        ["c", "Side c — between A and B", 10, "side"],
+        ["B", "Angle B (°)", 60, "angle"],
+      ],
+      aas: [
+        ["A", "Angle A (°)", 30, "angle"],
+        ["B", "Angle B (°)", 60, "angle"],
+        ["a", "Side a (opposite A)", 5, "side"],
+      ],
+      ssa: [
+        ["a", "Side a (opposite A)", 6, "side"],
+        ["b", "Side b", 8, "side"],
+        ["A", "Angle A (°)", 30, "angle"],
+      ],
+    };
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Solve triangle';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function applyMode() {
+      const mode = document.getElementById('mode').value;
+      const fields = MODES[mode];
+      for (let i = 0; i < 3; i++) {
+        const [, label, def] = fields[i];
+        document.getElementById(`f${i+1}-name`).textContent = label;
+        document.getElementById(`f${i+1}`).value = def;
+      }
+      document.getElementById('output').hidden = true;
+    }
+
+    function fmt(x, digits = 4) {
+      // Trim trailing zeros, keep tabular nums in CSS.
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+    }
+
+    function renderSolution(sol, label) {
+      const heading = label
+        ? `<h3 style="margin-top:1.5rem">${label}</h3>`
+        : '';
+      return `
+        ${heading}
+        <div class="card">
+          <table>
+            <tbody>
+              <tr><td class="muted">Side a</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.a)}</td></tr>
+              <tr><td class="muted">Side b</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.b)}</td></tr>
+              <tr><td class="muted">Side c</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.c)}</td></tr>
+              <tr><td class="muted">Angle A</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.A)}°</td></tr>
+              <tr><td class="muted">Angle B</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.B)}°</td></tr>
+              <tr><td class="muted">Angle C</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.C)}°</td></tr>
+              <tr><td class="muted">Perimeter</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.perimeter)}</td></tr>
+              <tr><td class="muted">Area</td><td style="font-variant-numeric:tabular-nums">${fmt(sol.area)}</td></tr>
+              <tr><td class="muted">Type</td><td>${sol.angle_type} · ${sol.side_type}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+      const fields = MODES[mode];
+      const args = [];
+      for (let i = 0; i < 3; i++) {
+        const [key] = fields[i];
+        const v = parseFloat(document.getElementById(`f${i+1}`).value);
+        if (!Number.isFinite(v)) {
+          alert('Please fill in all three fields with numbers.');
+          return;
+        }
+        args.push(`${key}=${v}`);
+      }
+
+      let solutions;
+      try {
+        solutions = pyCall(`logic.solve('${mode}', ${args.join(', ')})`);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+        return;
+      }
+
+      const out = document.getElementById('output');
+      if (solutions.length === 1) {
+        out.innerHTML = renderSolution(solutions[0]);
+      } else {
+        // Ambiguous SSA: render both labelled.
+        out.innerHTML = solutions
+          .map((s, i) => renderSolution(s, `Solution ${i + 1}`))
+          .join('');
+      }
+      out.hidden = false;
+    }
+
+    document.getElementById('mode').addEventListener('change', applyMode);
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
