@@ -86,6 +86,7 @@ existing tool, so just confirm it's present:
 - `annual-annuity` — Annual Annuity Calculator (save + withdraw modes)
 - `monthly-annuity` — Monthly Annuity Calculator (save + withdraw modes)
 - `currency-converter` — Currency Converter (live ECB rates via Frankfurter API; 30+ currencies)
+- `tip-bill-splitter` — Tip & Bill Splitter (tip, total, per-person share; optional rounding up/nearest/down to a clean increment; currency-agnostic)
 
 ### Health
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial

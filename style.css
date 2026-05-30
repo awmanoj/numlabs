@@ -121,6 +121,23 @@ button.secondary {
   border: 1px solid var(--border);
 }
 
+/* Row of small preset buttons (e.g. tip-percentage shortcuts). */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: -0.5rem;
+}
+.chip {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.chip:hover { border-color: var(--accent); }
+
 .result {
   font-size: 2.1rem;
   font-weight: 600;

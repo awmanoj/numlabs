@@ -31,6 +31,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://1618.reg32.dev/tools/tip-bill-splitter/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://1618.reg32.dev/tools/bmi/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

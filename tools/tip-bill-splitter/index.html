@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tip Calculator &amp; Bill Splitter — Split the Check | 1618.dev</title>
+  <meta name="description" content="Free tip calculator and bill splitter. Enter the bill, a tip percentage, and how many people are sharing to see the tip, the grand total, and each person's share — with optional rounding to a clean number." />
+  <meta name="keywords" content="tip calculator, bill splitter, split the bill, split the check, gratuity calculator, how much to tip, tip per person, divide bill between friends, restaurant bill calculator, percentage tip, round up tip, share bill calculator, dinner split calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/tip-bill-splitter/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Tip Calculator &amp; Bill Splitter — 1618.dev" />
+  <meta property="og:description" content="Split any check fairly: tip, grand total, and each person's share, with optional rounding to a clean number. Currency-agnostic, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/tip-bill-splitter/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Tip Calculator &amp; Bill Splitter — 1618.dev" />
+  <meta name="twitter:description" content="Tip, grand total, and per-person share for any bill — with optional rounding. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Tip Calculator & Bill Splitter",
+    "description": "Free tip calculator and bill splitter. Given a bill, a tip percentage and the number of people, compute the tip, the grand total and each person's share, with optional rounding to a clean amount. Currency-agnostic.",
+    "url": "https://1618.dev/tools/tip-bill-splitter/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Tip &amp; bill splitter</h2>
+      <p class="muted">Work out the tip, the grand total, and what each person owes. Currency-agnostic — the numbers work the same in any currency. Decimals welcome.</p>
+
+      <form id="form" class="card">
+        <label>
+          Bill amount
+          <input type="number" id="bill" value="84.50" min="0" step="any" required />
+        </label>
+
+        <label>
+          Tip %
+          <input type="number" id="tip" value="18" min="0" step="any" required />
+        </label>
+        <div class="chips" id="tip-chips">
+          <button type="button" class="chip" data-tip="10">10%</button>
+          <button type="button" class="chip" data-tip="15">15%</button>
+          <button type="button" class="chip" data-tip="18">18%</button>
+          <button type="button" class="chip" data-tip="20">20%</button>
+          <button type="button" class="chip" data-tip="25">25%</button>
+        </div>
+
+        <label>
+          Split between (people)
+          <input type="number" id="people" value="4" min="1" step="1" required />
+        </label>
+
+        <label>
+          Round each share
+          <select id="round-to">
+            <option value="0">No rounding</option>
+            <option value="0.25">to nearest 0.25</option>
+            <option value="0.5">to nearest 0.50</option>
+            <option value="1">to a whole number</option>
+            <option value="5">to nearest 5</option>
+            <option value="10">to nearest 10</option>
+          </select>
+        </label>
+
+        <label id="dir-label" hidden>
+          Rounding direction
+          <select id="round-dir">
+            <option value="up">round up</option>
+            <option value="nearest">round to nearest</option>
+            <option value="down">round down</option>
+          </select>
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden></div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        The tip is <strong>bill × tip% ÷ 100</strong>, the grand total is
+        <strong>bill + tip</strong>, and each person pays
+        <strong>total ÷ people</strong>. Nothing here assumes a currency — feed
+        it dollars, euros, rupees, or anything else.
+      </p>
+      <p class="muted">
+        Turn on <strong>rounding</strong> to make each person's share land on a
+        clean number. Because rounding the per-person share changes the real
+        total handed over, the result shows the <strong>adjusted total</strong>,
+        the <strong>extra left on the table</strong> (or shortfall, if you round
+        down), and the <strong>effective tip %</strong> that the rounded amount
+        actually works out to. Rounding <em>up</em> is the friendly default —
+        it never tips less than you asked for.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../currency-converter/">Currency converter</a>
+        <a href="../loan-emi/">Loan EMI</a>
+        <a href="../compound-interest/">Compound interest</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">tip calculator</span>
+        <span class="kw">bill splitter</span>
+        <span class="kw">split the bill</span>
+        <span class="kw">split the check</span>
+        <span class="kw">how much to tip</span>
+        <span class="kw">gratuity calculator</span>
+        <span class="kw">tip per person</span>
+        <span class="kw">divide bill between friends</span>
+        <span class="kw">restaurant bill calculator</span>
+        <span class="kw">round up the tip</span>
+        <span class="kw">dinner split calculator</span>
+        <span class="kw">share the bill</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Split the bill';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function fmt(x, digits = 2) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    function row(label, value) {
+      return `<tr><td class="muted">${label}</td><td style="font-variant-numeric:tabular-nums">${value}</td></tr>`;
+    }
+
+    function render(res) {
+      const headline = res.rounded ? res.rounded_per_person : res.per_person;
+      const rows = [];
+      rows.push(row('Tip', fmt(res.tip)));
+      rows.push(row('Grand total', fmt(res.total)));
+      rows.push(row(`Per person (÷ ${res.people})`, fmt(res.per_person)));
+      rows.push(row('&nbsp;&nbsp;· bill share', fmt(res.per_person_bill)));
+      rows.push(row('&nbsp;&nbsp;· tip share', fmt(res.per_person_tip)));
+
+      let roundingNote = '';
+      if (res.rounded) {
+        const dirWord = { up: 'up', down: 'down', nearest: 'to nearest' }[res.round_dir];
+        rows.push(row(`Rounded per person (${dirWord} ${fmt(res.round_to)})`, fmt(res.rounded_per_person)));
+        rows.push(row('Rounded total', fmt(res.rounded_total)));
+        const adj = res.adjustment;
+        const adjLabel = adj >= 0 ? 'Extra over the bill' : 'Short of the bill';
+        rows.push(row(adjLabel, fmt(Math.abs(adj))));
+        rows.push(row('Effective tip %', fmt(res.effective_tip_percent, 1) + '%'));
+      }
+
+      const headlineLabel = res.rounded ? 'Each person pays (rounded)' : 'Each person pays';
+      return `
+        <div class="card">
+          <div class="result">
+            <span class="label">${headlineLabel}</span>
+            <span style="font-variant-numeric:tabular-nums">${fmt(headline)}</span>
+          </div>
+          <table style="margin-top:0.8rem"><tbody>${rows.join('')}</tbody></table>
+        </div>`;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const bill = parseFloat(document.getElementById('bill').value);
+      const tip = parseFloat(document.getElementById('tip').value);
+      const people = parseInt(document.getElementById('people').value, 10);
+      const roundTo = parseFloat(document.getElementById('round-to').value);
+      const roundDir = document.getElementById('round-dir').value;
+
+      if (![bill, tip].every(Number.isFinite) || !Number.isFinite(people)) {
+        alert('Please fill in the bill, tip and number of people.');
+        return;
+      }
+
+      let res;
+      try {
+        res = pyCall(`logic.split(${bill}, ${tip}, ${people}, ${roundTo}, "${roundDir}")`);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+        return;
+      }
+
+      const out = document.getElementById('output');
+      out.innerHTML = render(res);
+      out.hidden = false;
+    }
+
+    // Tip preset chips fill the tip field.
+    document.getElementById('tip-chips').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip');
+      if (!btn) return;
+      document.getElementById('tip').value = btn.dataset.tip;
+    });
+
+    // Show the direction picker only when a rounding step is chosen.
+    const roundToSel = document.getElementById('round-to');
+    const dirLabel = document.getElementById('dir-label');
+    roundToSel.addEventListener('change', () => {
+      dirLabel.hidden = parseFloat(roundToSel.value) <= 0;
+    });
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>

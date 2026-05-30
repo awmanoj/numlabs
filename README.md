@@ -26,6 +26,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Annual annuity](tools/annual-annuity/) — yearly save (→ future value) or withdraw (→ annual payout)
 - [Monthly annuity](tools/monthly-annuity/) — monthly save (→ future value) or withdraw (→ monthly payout)
 - [Currency converter](tools/currency-converter/) — live forex rates between 30+ currencies, from European Central Bank reference rates
+- [Tip & bill splitter](tools/tip-bill-splitter/) — tip, grand total, and per-person share for any check, with optional rounding to a clean number
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
