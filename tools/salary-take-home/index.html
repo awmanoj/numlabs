@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Salary Take-Home Calculator by Country — Net Pay Estimate | 1618.dev</title>
+  <meta name="description" content="Estimate your annual and monthly take-home (net) pay from a gross salary across the US, UK, Canada, Australia, India and Ireland. A rough income-tax and social-contribution estimate — not tax advice." />
+  <meta name="keywords" content="salary take-home calculator, net pay calculator, take home pay by country, gross to net salary, income tax calculator, after tax salary, net salary calculator, take home pay UK, take home pay US, in-hand salary India, net pay Canada, take home pay Australia, net pay Ireland, paycheck calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/salary-take-home/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Salary Take-Home Calculator by Country — 1618.dev" />
+  <meta property="og:description" content="Rough net-pay estimate from a gross salary for the US, UK, Canada, Australia, India and Ireland — income tax plus the main social contributions. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/salary-take-home/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Salary Take-Home Calculator by Country — 1618.dev" />
+  <meta name="twitter:description" content="Estimate annual and monthly take-home pay from a gross salary across six countries. A rough estimate — not tax advice." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Salary Take-Home Calculator by Country",
+    "description": "Estimate annual and monthly take-home (net) pay from a gross salary for the United States, United Kingdom, Canada, Australia, India and Ireland, using each country's headline income-tax bands plus the main employee social contributions. A rough estimate, not tax advice.",
+    "url": "https://1618.dev/tools/salary-take-home/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Salary take-home calculator</h2>
+      <p class="muted">Turn an annual <strong>gross</strong> salary into an estimated <strong>take-home</strong> (net) figure — yearly and monthly — for a single person with no dependants. Pick a country, enter the salary, and see the income tax and social contributions that come off.</p>
+
+      <div class="card" style="border-color:var(--accent)">
+        <strong>⚠︎ Rough estimate — not tax advice.</strong>
+        <p class="muted" style="margin-top:0.4rem">
+          This is a back-of-the-envelope model. It uses each country's headline
+          income-tax bands plus the main employee contributions for a
+          <strong>single person, no dependants</strong>, and ignores a lot:
+          marital / filing status, pensions and salary sacrifice, student-loan
+          repayments, regional / state / provincial taxes, low-income reliefs,
+          surcharges, and the precise tax year. Real numbers will differ —
+          treat this as a ballpark, and check official figures or a tax
+          professional before relying on it.
+        </p>
+      </div>
+
+      <form id="form" class="card">
+        <label>
+          Country
+          <select id="country"></select>
+        </label>
+
+        <label>
+          Annual gross salary
+          <input type="number" id="gross" value="75000" min="0" step="any" required />
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden></div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        Take-home = <strong>gross − income tax − social contributions</strong>.
+        Income tax is applied <strong>marginally</strong>: each slice of your
+        salary is taxed at its band's rate, not your whole salary at the top
+        rate. On top of income tax, each country has its own payroll/social
+        levies — US Social Security &amp; Medicare, UK National Insurance,
+        Australia's Medicare levy, Ireland's USC &amp; PRSI, India's cess.
+        The result shows every deduction, the <strong>effective rate</strong>
+        (total taken ÷ gross), and the net figure per year and per month.
+      </p>
+      <p class="muted">
+        Country-specific simplifications are listed under <strong>Assumptions</strong>
+        in each result — read them, because some are large (Canada here is
+        <em>federal tax only</em>, for instance).
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../loan-emi/">Loan EMI</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../currency-converter/">Currency converter</a>
+        <a href="../tip-bill-splitter/">Tip &amp; bill splitter</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">salary take-home calculator</span>
+        <span class="kw">net pay calculator</span>
+        <span class="kw">gross to net salary</span>
+        <span class="kw">after-tax salary</span>
+        <span class="kw">take home pay UK</span>
+        <span class="kw">take home pay US</span>
+        <span class="kw">in-hand salary India</span>
+        <span class="kw">net pay Canada</span>
+        <span class="kw">take home pay Australia</span>
+        <span class="kw">net salary Ireland</span>
+        <span class="kw">income tax calculator</span>
+        <span class="kw">paycheck calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+    let countries = [];
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+
+      countries = pyCall('logic.countries()');
+      const sel = document.getElementById('country');
+      sel.innerHTML = countries
+        .map(c => `<option value="${c.code}">${c.name} (${c.currency_code})</option>`)
+        .join('');
+      sel.value = 'us';
+      syncDefault();
+
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate take-home';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    function row(label, value, strong = false) {
+      const cell = strong ? `<strong>${value}</strong>` : value;
+      const name = strong ? `<strong>${label}</strong>` : `<span class="muted">${label}</span>`;
+      return `<tr><td>${name}</td><td style="font-variant-numeric:tabular-nums">${cell}</td></tr>`;
+    }
+
+    function render(res) {
+      const cur = res.currency;
+      const money = v => cur + fmt(v);
+
+      const rows = [];
+      rows.push(row('Gross (annual)', money(res.gross)));
+      for (const line of res.lines) {
+        rows.push(row('− ' + line.label, money(line.amount)));
+      }
+      rows.push(row('Total deductions', money(res.total_deductions), true));
+      rows.push(row('Effective rate', fmt(res.effective_rate, 1) + '%'));
+      rows.push(row('Net (annual)', money(res.net_annual), true));
+      rows.push(row('Net (monthly)', money(res.net_monthly)));
+      rows.push(row('Gross (monthly)', money(res.gross_monthly)));
+
+      const notes = res.notes.map(n => `<li>${n}</li>`).join('');
+
+      return `
+        <div class="card">
+          <div class="result">
+            <span class="label">${res.country_name} · take-home / year</span>
+            <span style="font-variant-numeric:tabular-nums">${money(res.net_annual)}</span>
+          </div>
+          <p class="muted" style="margin-top:0.3rem">${money(res.net_monthly)} per month · ${fmt(res.effective_rate, 1)}% deducted</p>
+          <table style="margin-top:0.8rem"><tbody>${rows.join('')}</tbody></table>
+        </div>
+        <div class="card">
+          <strong>Assumptions for ${res.country_name}</strong>
+          <ul class="muted" style="margin:0.5rem 0 0; padding-left:1.1rem; line-height:1.5">${notes}</ul>
+        </div>`;
+    }
+
+    // When the country changes, drop in that country's default salary.
+    function syncDefault() {
+      const code = document.getElementById('country').value;
+      const c = countries.find(x => x.code === code);
+      if (c) document.getElementById('gross').value = c.default_gross;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const country = document.getElementById('country').value;
+      const gross = parseFloat(document.getElementById('gross').value);
+
+      if (!Number.isFinite(gross)) {
+        alert('Please enter a gross salary.');
+        return;
+      }
+
+      let res;
+      try {
+        res = pyCall(`logic.take_home("${country}", ${gross})`);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+        return;
+      }
+
+      const out = document.getElementById('output');
+      out.innerHTML = render(res);
+      out.hidden = false;
+    }
+
+    document.getElementById('country').addEventListener('change', syncDefault);
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>

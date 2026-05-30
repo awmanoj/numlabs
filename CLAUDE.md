@@ -87,6 +87,7 @@ existing tool, so just confirm it's present:
 - `monthly-annuity` — Monthly Annuity Calculator (save + withdraw modes)
 - `currency-converter` — Currency Converter (live ECB rates via Frankfurter API; 30+ currencies)
 - `tip-bill-splitter` — Tip & Bill Splitter (tip, total, per-person share; optional rounding up/nearest/down to a clean increment; currency-agnostic)
+- `salary-take-home` — Salary Take-Home Calculator by country (US/UK/CA/AU/IN/IE; headline income-tax bands + main employee social contributions; rough estimate, single filer, heavily disclaimed; data-driven `_DISPATCH` model in logic.py)
 
 ### Health
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial
