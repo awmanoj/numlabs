@@ -93,6 +93,7 @@ existing tool, so just confirm it's present:
 
 ### Maths
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
+- `quadratic-equation` — Quadratic Equation Solver (roots real/complex, discriminant, vertex, axis of symmetry, Vieta sum/product, rational factored form)
 - `roman-numeral` — Roman Numeral Converter (number ↔ Roman, 1–3999)
 - `triangle-solver` — Triangle Solver (SSS, SAS, ASA, AAS, SSA — law of cosines / law of sines; ambiguous case handled)
 - `unit-converter` — Unit Converter (length, mass, volume; metric ↔ imperial via exact base-unit factors)

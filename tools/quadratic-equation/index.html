@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quadratic Equation Solver — Roots, Discriminant, Vertex | 1618.dev</title>
+  <meta name="description" content="Free quadratic equation solver. Enter a, b, c for ax²+bx+c=0 and get the real or complex roots, discriminant, vertex, axis of symmetry, and factored form via the quadratic formula." />
+  <meta name="keywords" content="quadratic equation solver, quadratic formula calculator, find roots of quadratic, discriminant calculator, ax2 bx c, solve quadratic equation, complex roots calculator, vertex of parabola, axis of symmetry, factoring quadratics, roots calculator, quadratic roots, parabola vertex calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/quadratic-equation/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Quadratic Equation Solver — 1618.dev" />
+  <meta property="og:description" content="Solve ax²+bx+c=0: real or complex roots, discriminant, vertex, axis of symmetry, and factored form. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/quadratic-equation/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Quadratic Equation Solver — 1618.dev" />
+  <meta name="twitter:description" content="Solve ax²+bx+c=0: roots (real or complex), discriminant, vertex, factored form. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Quadratic Equation Solver",
+    "description": "Free quadratic equation solver. Given a, b and c in ax²+bx+c=0, compute the real or complex roots, discriminant, parabola vertex, axis of symmetry and factored form via the quadratic formula.",
+    "url": "https://1618.dev/tools/quadratic-equation/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Quadratic equation solver</h2>
+      <p class="muted">Enter the coefficients of <em>a</em><em>x</em><sup>2</sup> + <em>b</em><em>x</em> + <em>c</em> = 0 to find its roots, discriminant, vertex, and factored form. Roots may be real or complex.</p>
+
+      <form id="form" class="card">
+        <label>
+          a (coefficient of x²)
+          <input type="number" id="a" value="1" step="any" />
+        </label>
+        <label>
+          b (coefficient of x)
+          <input type="number" id="b" value="-5" step="any" />
+        </label>
+        <label>
+          c (constant)
+          <input type="number" id="c" value="6" step="any" />
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden></div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        The roots come from the <strong>quadratic formula</strong>,
+        <em>x</em> = (−<em>b</em> ± √(<em>b</em><sup>2</sup> − 4<em>ac</em>)) / 2<em>a</em>.
+        The quantity under the root, Δ = <em>b</em><sup>2</sup> − 4<em>ac</em>, is the
+        <strong>discriminant</strong> and decides the nature of the roots:
+      </p>
+      <p class="muted">
+        Δ &gt; 0 → two distinct real roots &nbsp;·&nbsp;
+        Δ = 0 → one repeated real root &nbsp;·&nbsp;
+        Δ &lt; 0 → two complex-conjugate roots.
+      </p>
+      <p class="muted">
+        The parabola's <strong>vertex</strong> sits at
+        <em>x</em> = −<em>b</em> / 2<em>a</em>, which is also the
+        <strong>axis of symmetry</strong>. By
+        <strong>Vieta's formulas</strong> the roots sum to −<em>b</em>/<em>a</em>
+        and multiply to <em>c</em>/<em>a</em>. When the roots are rational, a
+        <strong>factored form</strong> is shown.
+        If <em>a</em> = 0 the equation is linear, and its single root is reported.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../triangle-solver/">Triangle solver</a>
+        <a href="../unit-converter/">Unit converter</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">quadratic equation solver</span>
+        <span class="kw">quadratic formula calculator</span>
+        <span class="kw">find roots of quadratic</span>
+        <span class="kw">discriminant calculator</span>
+        <span class="kw">solve ax² + bx + c = 0</span>
+        <span class="kw">complex roots calculator</span>
+        <span class="kw">real roots</span>
+        <span class="kw">repeated root</span>
+        <span class="kw">vertex of parabola</span>
+        <span class="kw">axis of symmetry</span>
+        <span class="kw">factoring quadratics</span>
+        <span class="kw">Vieta's formulas</span>
+        <span class="kw">sum and product of roots</span>
+        <span class="kw">parabola vertex calculator</span>
+        <span class="kw">second degree equation</span>
+        <span class="kw">roots calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Solve equation';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function fmt(x, digits = 6) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, { maximumFractionDigits: digits });
+    }
+
+    function rootLabel(r) {
+      if (r.kind === 'real') return fmt(r.value);
+      const sign = r.im < 0 ? '−' : '+';
+      return `${fmt(r.re)} ${sign} ${fmt(Math.abs(r.im))}i`;
+    }
+
+    function render(res) {
+      const rows = [];
+      res.roots.forEach((r, i) => {
+        const label = res.roots.length === 2 ? `x${i === 0 ? '₁' : '₂'}` : 'x';
+        rows.push(`<tr><td class="muted">Root ${label}</td><td style="font-variant-numeric:tabular-nums">${rootLabel(r)}</td></tr>`);
+      });
+
+      rows.push(`<tr><td class="muted">Nature</td><td>${res.nature}</td></tr>`);
+      if (res.discriminant !== null && res.discriminant !== undefined) {
+        rows.push(`<tr><td class="muted">Discriminant Δ</td><td style="font-variant-numeric:tabular-nums">${fmt(res.discriminant)}</td></tr>`);
+      }
+      if (!res.degenerate) {
+        rows.push(`<tr><td class="muted">Vertex</td><td style="font-variant-numeric:tabular-nums">(${fmt(res.vertex_x)}, ${fmt(res.vertex_y)})</td></tr>`);
+        rows.push(`<tr><td class="muted">Axis of symmetry</td><td style="font-variant-numeric:tabular-nums">x = ${fmt(res.axis)}</td></tr>`);
+        rows.push(`<tr><td class="muted">Sum of roots</td><td style="font-variant-numeric:tabular-nums">${fmt(res.sum_roots)}</td></tr>`);
+        rows.push(`<tr><td class="muted">Product of roots</td><td style="font-variant-numeric:tabular-nums">${fmt(res.product_roots)}</td></tr>`);
+        if (res.factored) {
+          rows.push(`<tr><td class="muted">Factored form</td><td>${res.factored} = 0</td></tr>`);
+        }
+      }
+
+      return `<div class="card"><table><tbody>${rows.join('')}</tbody></table></div>`;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const a = parseFloat(document.getElementById('a').value);
+      const b = parseFloat(document.getElementById('b').value);
+      const c = parseFloat(document.getElementById('c').value);
+      if (![a, b, c].every(Number.isFinite)) {
+        alert('Please fill in a, b and c with numbers.');
+        return;
+      }
+
+      let res;
+      try {
+        res = pyCall(`logic.solve(${a}, ${b}, ${c})`);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+        return;
+      }
+
+      const out = document.getElementById('output');
+      out.innerHTML = render(res);
+      out.hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
