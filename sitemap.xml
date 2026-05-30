@@ -1,62 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://1618.dev/</loc>
+    <loc>https://1618.reg32.dev/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/compound-interest/</loc>
+    <loc>https://1618.reg32.dev/tools/compound-interest/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/loan-emi/</loc>
+    <loc>https://1618.reg32.dev/tools/loan-emi/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/annual-annuity/</loc>
+    <loc>https://1618.reg32.dev/tools/annual-annuity/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/monthly-annuity/</loc>
+    <loc>https://1618.reg32.dev/tools/monthly-annuity/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/currency-converter/</loc>
+    <loc>https://1618.reg32.dev/tools/currency-converter/</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/bmi/</loc>
+    <loc>https://1618.reg32.dev/tools/bmi/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/age-calculator/</loc>
+    <loc>https://1618.reg32.dev/tools/age-calculator/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/prime-factorization/</loc>
+    <loc>https://1618.reg32.dev/tools/prime-factorization/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/roman-numeral/</loc>
+    <loc>https://1618.reg32.dev/tools/roman-numeral/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/triangle-solver/</loc>
+    <loc>https://1618.reg32.dev/tools/triangle-solver/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://1618.dev/tools/ph-acid-base/</loc>
+    <loc>https://1618.reg32.dev/tools/ph-acid-base/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://1618.reg32.dev/tools/unit-converter/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

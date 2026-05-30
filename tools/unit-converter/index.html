@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unit Converter — Length, Mass & Volume | 1618.dev</title>
+  <meta name="description" content="Free unit converter for length, mass, and volume. Convert metres, miles, feet, kilograms, pounds, ounces, litres, gallons and more — with the exact conversion factor shown." />
+  <meta name="keywords" content="unit converter, length converter, mass converter, weight converter, volume converter, metric to imperial, km to miles, kg to lbs, litres to gallons, cm to inches, feet to metres, ounces to grams, measurement converter" />
+  <link rel="canonical" href="https://1618.dev/tools/unit-converter/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Unit Converter — 1618.dev" />
+  <meta property="og:description" content="Convert length, mass, and volume between metric and imperial units. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/unit-converter/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Unit Converter — 1618.dev" />
+  <meta name="twitter:description" content="Length, mass and volume conversion across metric and imperial units. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Unit Converter",
+    "description": "Free unit converter for length, mass, and volume across metric and imperial units, using exact international conversion factors.",
+    "url": "https://1618.dev/tools/unit-converter/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Unit converter</h2>
+      <p class="muted">Convert length, mass, and volume between metric and imperial units, using exact international conversion factors.</p>
+
+      <form id="form" class="card">
+        <label>
+          Measure
+          <select id="category">
+            <option value="length">Length</option>
+            <option value="mass">Mass / weight</option>
+            <option value="volume">Volume</option>
+          </select>
+        </label>
+        <label>
+          Amount
+          <input type="number" id="amount" value="1" step="any" required />
+        </label>
+        <label>
+          From
+          <select id="from"></select>
+        </label>
+        <label>
+          To
+          <select id="to"></select>
+        </label>
+        <button type="button" id="swap" class="secondary">Swap ↔</button>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="result-label">—</span>
+            <span id="converted">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            <span id="factor-line">—</span><br />
+            <span id="inverse-line">—</span>
+          </p>
+        </div>
+      </div>
+
+      <div id="error" class="card" hidden style="border-color:#c33;color:#c33">
+        <strong>Could not convert.</strong>
+        <p class="muted" id="error-detail" style="margin-top:0.4rem"></p>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        Every unit is stored as a single factor — how many base units it equals
+        (metre for length, kilogram for mass, litre for volume). To convert, we
+        scale the input to the base unit and back out to the target unit, so
+        there's no per-pair lookup table. Factors use the exact international
+        definitions: 1 inch = 0.0254 m, 1 pound = 0.45359237 kg, and US fluid
+        measures derive from the US gallon = 3.785411784 L.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../roman-numeral/">Roman numeral</a>
+        <a href="../triangle-solver/">Triangle solver</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">unit converter</span>
+        <span class="kw">length converter</span>
+        <span class="kw">mass converter</span>
+        <span class="kw">weight converter</span>
+        <span class="kw">volume converter</span>
+        <span class="kw">metric to imperial</span>
+        <span class="kw">km to miles</span>
+        <span class="kw">miles to km</span>
+        <span class="kw">kg to lbs</span>
+        <span class="kw">pounds to kg</span>
+        <span class="kw">cm to inches</span>
+        <span class="kw">feet to metres</span>
+        <span class="kw">litres to gallons</span>
+        <span class="kw">ounces to grams</span>
+        <span class="kw">measurement converter</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Mirror of the labels/keys in logic.py so the dropdowns can be built
+    // without round-tripping through Python on every category switch.
+    const UNITS = {
+      length: [
+        ["mm", "Millimetre (mm)"],
+        ["cm", "Centimetre (cm)"],
+        ["m", "Metre (m)"],
+        ["km", "Kilometre (km)"],
+        ["in", "Inch (in)"],
+        ["ft", "Foot (ft)"],
+        ["yd", "Yard (yd)"],
+        ["mi", "Mile (mi)"],
+        ["nmi", "Nautical mile (nmi)"],
+      ],
+      mass: [
+        ["mg", "Milligram (mg)"],
+        ["g", "Gram (g)"],
+        ["kg", "Kilogram (kg)"],
+        ["t", "Metric tonne (t)"],
+        ["oz", "Ounce (oz)"],
+        ["lb", "Pound (lb)"],
+        ["st", "Stone (st)"],
+        ["ton_us", "US ton (short)"],
+        ["ton_uk", "UK ton (long)"],
+      ],
+      volume: [
+        ["ml", "Millilitre (mL)"],
+        ["l", "Litre (L)"],
+        ["m3", "Cubic metre (m³)"],
+        ["tsp", "Teaspoon (US)"],
+        ["tbsp", "Tablespoon (US)"],
+        ["floz", "Fluid ounce (US)"],
+        ["cup", "Cup (US)"],
+        ["pt", "Pint (US)"],
+        ["qt", "Quart (US)"],
+        ["gal", "Gallon (US)"],
+        ["gal_uk", "Gallon (imperial)"],
+      ],
+    };
+
+    // Sensible default from/to pair per category.
+    const DEFAULTS = {
+      length: ["km", "mi"],
+      mass: ["kg", "lb"],
+      volume: ["l", "gal"],
+    };
+
+    function fmt(n) {
+      // Pick a precision that stays readable across very large and very small
+      // magnitudes without scientific notation for everyday values.
+      const abs = Math.abs(n);
+      let decimals;
+      if (abs === 0) decimals = 0;
+      else if (abs >= 1000) decimals = 2;
+      else if (abs >= 1) decimals = 4;
+      else decimals = 6;
+      return new Intl.NumberFormat(undefined, {
+        style: "decimal",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals,
+      }).format(n);
+    }
+
+    function fillUnitSelects() {
+      const cat = document.getElementById("category").value;
+      const fromSel = document.getElementById("from");
+      const toSel = document.getElementById("to");
+      fromSel.innerHTML = "";
+      toSel.innerHTML = "";
+      for (const [key, label] of UNITS[cat]) {
+        const o1 = document.createElement("option");
+        o1.value = key;
+        o1.textContent = label;
+        fromSel.appendChild(o1);
+        toSel.appendChild(o1.cloneNode(true));
+      }
+      const [df, dt] = DEFAULTS[cat];
+      fromSel.value = df;
+      toSel.value = dt;
+    }
+
+    let pyodide;
+
+    async function init() {
+      fillUnitSelects();
+      pyodide = await loadPyodide();
+      const code = await fetch("logic.py").then((r) => r.text());
+      pyodide.FS.writeFile("logic.py", code);
+      pyodide.runPython("import logic");
+      const btn = document.getElementById("go");
+      btn.textContent = "Convert";
+      btn.disabled = false;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      document.getElementById("error").hidden = true;
+
+      const amount = parseFloat(document.getElementById("amount").value);
+      const category = document.getElementById("category").value;
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+
+      if (!Number.isFinite(amount)) return;
+
+      let result;
+      try {
+        const proxy = pyodide.runPython(
+          `logic.convert(${amount}, "${category}", "${from}", "${to}")`
+        );
+        result = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        document.getElementById("error-detail").textContent =
+          err && err.message ? err.message : String(err);
+        document.getElementById("error").hidden = false;
+        return;
+      }
+
+      document.getElementById("result-label").textContent =
+        `${fmt(amount)} ${result.from_label} =`;
+      document.getElementById("converted").textContent =
+        `${fmt(result.converted)} ${result.to_label}`;
+      document.getElementById("factor-line").textContent =
+        `1 ${result.from_label} = ${fmt(result.factor)} ${result.to_label}`;
+      document.getElementById("inverse-line").textContent =
+        `1 ${result.to_label} = ${fmt(result.inverse_factor)} ${result.from_label}`;
+
+      document.getElementById("output").hidden = false;
+    }
+
+    function swap() {
+      const f = document.getElementById("from");
+      const t = document.getElementById("to");
+      const tmp = f.value;
+      f.value = t.value;
+      t.value = tmp;
+    }
+
+    document.getElementById("category").addEventListener("change", () => {
+      fillUnitSelects();
+      document.getElementById("output").hidden = true;
+    });
+    document.getElementById("form").addEventListener("submit", calculate);
+    document.getElementById("swap").addEventListener("click", swap);
+    init();
+  </script>
+</body>
+</html>

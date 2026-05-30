@@ -95,6 +95,7 @@ existing tool, so just confirm it's present:
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
 - `roman-numeral` — Roman Numeral Converter (number ↔ Roman, 1–3999)
 - `triangle-solver` — Triangle Solver (SSS, SAS, ASA, AAS, SSA — law of cosines / law of sines; ambiguous case handled)
+- `unit-converter` — Unit Converter (length, mass, volume; metric ↔ imperial via exact base-unit factors)
 
 ### Science
 - `ph-acid-base` — pH / acid-base calculator (pH ↔ pOH ↔ [H⁺] ↔ [OH⁻]; strong/weak acid/base pH from concentration and Ka/Kb)

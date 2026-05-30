@@ -35,6 +35,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
 - [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)
 - [Triangle solver](tools/triangle-solver/) — solve any triangle from SSS, SAS, ASA, AAS or SSA inputs (sides, angles, perimeter, area)
+- [Unit converter](tools/unit-converter/) — convert length, mass, and volume between metric and imperial units
 
 ### Science
 - [pH / acid-base calculator](tools/ph-acid-base/) — pH, pOH, [H⁺] and [OH⁻]; pH of strong and weak acids and bases from concentration and Ka / Kb
