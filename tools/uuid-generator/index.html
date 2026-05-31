@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UUID Generator — Random v4, Time-Ordered v7, v1 | 1618.dev</title>
+  <meta name="description" content="Free online UUID generator. Create random v4, time-ordered v7, or v1 UUIDs in bulk, with uppercase and hyphen-free options. RFC 4122 / RFC 9562 compliant. Runs entirely in your browser." />
+  <meta name="keywords" content="uuid generator, guid generator, generate uuid, random uuid, uuid v4, uuid v7, uuid v1, time-ordered uuid, bulk uuid, online uuid, uuid4, uuid7, rfc 4122, rfc 9562, unique id generator, uppercase uuid" />
+  <link rel="canonical" href="https://1618.dev/tools/uuid-generator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="UUID Generator — Random v4, Time-Ordered v7, v1 | 1618.dev" />
+  <meta property="og:description" content="Generate random v4, time-ordered v7, or v1 UUIDs in bulk, in your browser. Uppercase and hyphen-free options. Free, nothing uploaded." />
+  <meta property="og:url" content="https://1618.dev/tools/uuid-generator/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="UUID Generator — 1618.dev" />
+  <meta name="twitter:description" content="Generate v4 / v7 / v1 UUIDs in bulk, in your browser. Uppercase and hyphen-free options. Free, nothing uploaded." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "UUID Generator",
+    "description": "Free online UUID generator. Create random v4, time-ordered v7, or v1 UUIDs in bulk, with uppercase and hyphen-free formatting options. RFC 4122 / RFC 9562 compliant. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/uuid-generator/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* UUIDs are monospace text; the result is a list, so reuse a tall
+       monospace textarea. These styles are specific to this tool. */
+    .uuid-area {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      min-height: 11rem;
+      width: 100%;
+      resize: vertical;
+      white-space: pre;
+      overflow-x: auto;
+      background: var(--bg);
+    }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.5rem;
+      margin: 0.75rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .stats b { color: var(--fg); font-weight: 600; }
+    .error {
+      color: #c0392b;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .error { color: #ff8a80; }
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .opts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 1rem;
+    }
+    .opts label { font-size: 0.85rem; }
+    .opts .num { max-width: 7rem; }
+    .opts .check {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .opts .check input { width: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>UUID generator</h2>
+      <p class="muted">Generate UUIDs — random <b>v4</b>, time-ordered <b>v7</b>, legacy <b>v1</b>, or the all-zero <b>nil</b>. Make one or a whole batch, choose upper or lower case, and keep or drop the hyphens. Everything runs in your browser — the values are generated locally and nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <div class="opts">
+          <label>
+            Version
+            <select id="version">
+              <option value="4" selected>v4 — random</option>
+              <option value="7">v7 — time-ordered</option>
+              <option value="1">v1 — time + node</option>
+              <option value="nil">nil — all zeros</option>
+            </select>
+          </label>
+          <label>
+            How many
+            <input id="count" class="num" type="number" min="1" max="1000" step="1" value="1" />
+          </label>
+          <label class="check">
+            <input id="uppercase" type="checkbox" />
+            Uppercase
+          </label>
+          <label class="check">
+            <input id="hyphens" type="checkbox" checked />
+            Hyphens
+          </label>
+        </div>
+
+        <div class="actions" style="margin-top:1rem">
+          <button type="submit" id="go" disabled>Loading Python…</button>
+        </div>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <label>
+            Result
+            <textarea id="output-area" class="uuid-area" readonly spellcheck="false"></textarea>
+          </label>
+          <div class="actions" style="margin-top:0.75rem">
+            <button type="button" id="copy" class="secondary">Copy</button>
+          </div>
+          <div class="stats">
+            <span><b id="stat-count">—</b> generated</span>
+            <span>version <b id="stat-version">—</b></span>
+          </div>
+        </div>
+      </div>
+
+      <h3>What this does</h3>
+      <p class="muted">
+        A UUID (universally unique identifier, also called a GUID) is a 128-bit
+        value written as 32 hexadecimal digits in five hyphen-separated groups,
+        like <code>f47ac10b-58cc-4372-a567-0e02b2c3d479</code>. They let
+        independent systems mint identifiers that won't collide without any
+        central coordination.
+      </p>
+      <p class="muted">
+        <b>v4</b> is almost entirely random and is the right default for most
+        uses. <b>v7</b> puts a millisecond timestamp in the high bits so the
+        values sort by creation time — that locality makes them far kinder to
+        database indexes than v4, which is why they're increasingly used as
+        primary keys. <b>v1</b> is the older time-based scheme (here the node
+        is random, not a hardware address). The <b>nil</b> UUID is all zeros,
+        useful as a placeholder or "no value" sentinel. v4 and v7 are generated
+        from a cryptographically secure random source.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../json-formatter/">JSON formatter</a>
+        <a href="../base64/">Base64 encoder / decoder</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">uuid generator</span>
+        <span class="kw">guid generator</span>
+        <span class="kw">generate uuid</span>
+        <span class="kw">random uuid</span>
+        <span class="kw">uuid v4</span>
+        <span class="kw">uuid v7</span>
+        <span class="kw">uuid v1</span>
+        <span class="kw">time-ordered uuid</span>
+        <span class="kw">bulk uuid generator</span>
+        <span class="kw">uuid4 online</span>
+        <span class="kw">uuid7 online</span>
+        <span class="kw">unique id generator</span>
+        <span class="kw">uppercase uuid</span>
+        <span class="kw">uuid without hyphens</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Generate';
+      btn.disabled = false;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('error');
+      const outEl = document.getElementById('output');
+
+      pyodide.globals.set('version', document.getElementById('version').value);
+      pyodide.globals.set('count', document.getElementById('count').value);
+      pyodide.globals.set('uppercase', document.getElementById('uppercase').checked);
+      pyodide.globals.set('hyphens', document.getElementById('hyphens').checked);
+
+      let result;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.generate(version, count, uppercase, hyphens)'
+        );
+        result = proxy.toJs();
+        proxy.destroy();
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        outEl.hidden = true;
+        return;
+      }
+
+      errEl.hidden = true;
+      document.getElementById('output-area').value = result.get('text');
+      document.getElementById('stat-count').textContent = result.get('count').toLocaleString();
+      document.getElementById('stat-version').textContent = result.get('version');
+      outEl.hidden = false;
+    }
+
+    async function copyOutput() {
+      const text = document.getElementById('output-area').value;
+      if (!text) return;
+      const btn = document.getElementById('copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied!';
+      } catch (err) {
+        // Fallback for browsers without the async clipboard API.
+        const area = document.getElementById('output-area');
+        area.select();
+        document.execCommand('copy');
+        btn.textContent = 'Copied!';
+      }
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    document.getElementById('copy').addEventListener('click', copyOutput);
+    init();
+  </script>
+</body>
+</html>

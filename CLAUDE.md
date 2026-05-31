@@ -107,6 +107,7 @@ existing tool, so just confirm it's present:
 ### Developer
 - `json-formatter` — JSON Formatter / Validator (beautify with 2/4-space or tab indent, minify, optional sort-keys; line/column error reporting; UTF-8 preserved; stats: lines/bytes/values/depth)
 - `base64` — Base64 Encoder / Decoder (encode text → Base64 or decode back; standard and URL-safe alphabets; UTF-8 round-trip; tolerant decoding — strips whitespace, restores padding, accepts either alphabet; stats: input/output bytes, output chars)
+- `uuid-generator` — UUID Generator (v4 random, v7 time-ordered, v1 time+node, nil; bulk generation up to 1000; uppercase and hyphen-free formatting options; v7 assembled by hand per RFC 9562 since stdlib has no uuid7; secrets-backed randomness)
 
 ## Backlog
 
