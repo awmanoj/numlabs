@@ -25,6 +25,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Loan EMI](tools/loan-emi/) — monthly installment + amortization for a fixed-rate loan
 - [Annual annuity](tools/annual-annuity/) — yearly save (→ future value) or withdraw (→ annual payout)
 - [Monthly annuity](tools/monthly-annuity/) — monthly save (→ future value) or withdraw (→ monthly payout)
+- [SIP calculator](tools/sip-calculator/) — maturity value of a monthly SIP, total invested, and estimated returns, with optional annual step-up
 - [Currency converter](tools/currency-converter/) — live forex rates between 30+ currencies, from European Central Bank reference rates
 - [Tip & bill splitter](tools/tip-bill-splitter/) — tip, grand total, and per-person share for any check, with optional rounding to a clean number
 - [Salary take-home](tools/salary-take-home/) — rough net-pay estimate from a gross salary for the US, UK, Canada, Australia, India and Ireland (income tax + main social contributions; not tax advice)

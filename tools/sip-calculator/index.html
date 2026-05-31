@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIP Calculator — Mutual Fund Returns & Step-Up SIP | 1618.dev</title>
+  <meta name="description" content="Free SIP calculator: see the maturity value of a monthly mutual fund SIP, total invested, and estimated returns. Supports annual step-up SIP. Runs in your browser." />
+  <meta name="keywords" content="SIP calculator, systematic investment plan calculator, mutual fund SIP calculator, step up SIP calculator, SIP returns calculator, SIP maturity calculator, monthly investment calculator, SIP corpus calculator, top up SIP, wealth calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/sip-calculator/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SIP Calculator — Mutual Fund Returns & Step-Up SIP | 1618.dev" />
+  <meta property="og:description" content="Maturity value of a monthly SIP, total invested, and estimated returns — with optional annual step-up. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/sip-calculator/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="SIP Calculator — Mutual Fund Returns & Step-Up SIP" />
+  <meta name="twitter:description" content="Monthly SIP → maturity value, invested, and returns. Optional step-up. Free, in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "SIP Calculator",
+    "description": "Free SIP (Systematic Investment Plan) calculator. Computes the maturity value, total invested, and estimated returns of a monthly mutual fund SIP, with an optional annual step-up.",
+    "url": "https://1618.dev/tools/sip-calculator/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>SIP calculator</h2>
+      <p class="muted">Invest a fixed amount each month and see what it grows to. Contributions are made at the start of each month and compound monthly at your expected rate of return.</p>
+
+      <form id="form" class="card">
+        <label>
+          Monthly investment
+          <input type="number" id="amount" value="10000" min="0" step="any" required />
+        </label>
+        <label>
+          Expected annual return (%)
+          <input type="number" id="rate" value="12" step="any" required />
+        </label>
+        <label>
+          Years
+          <input type="number" id="years" value="20" min="1" step="1" required />
+        </label>
+        <label>
+          Annual step-up (%) <span class="muted">— optional, raises the monthly amount each year</span>
+          <input type="number" id="stepup" value="0" min="0" step="any" />
+        </label>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Maturity value</span>
+            <span id="result">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Total invested: <span id="invested">—</span> ·
+            Estimated returns: <span id="returns">—</span>
+          </p>
+        </div>
+
+        <h3>Year by year</h3>
+        <table>
+          <thead>
+            <tr><th>Year</th><th>Invested</th><th>Value</th><th>Gains</th></tr>
+          </thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+
+      <h3>Formula</h3>
+      <div class="formula">
+        FV = P · ((1 + i)<sup>n</sup> − 1) / i · (1 + i)
+      </div>
+      <p class="muted" style="margin-top:0.5rem">
+        P = monthly investment, i = monthly rate (annual / 12 / 100), n = number
+        of months (years × 12). The trailing (1 + i) is because each SIP is
+        invested at the <em>start</em> of the month. With a step-up, the monthly
+        amount is raised once a year and the corpus is summed month by month.
+      </p>
+      <p class="muted" style="margin-top:0.5rem">
+        Returns are an assumption, not a guarantee — markets fluctuate and actual
+        mutual fund returns vary year to year. This is a planning estimate only.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../monthly-annuity/">Monthly annuity</a>
+        <a href="../loan-emi/">Loan EMI</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">SIP calculator</span>
+        <span class="kw">systematic investment plan</span>
+        <span class="kw">mutual fund SIP calculator</span>
+        <span class="kw">step up SIP calculator</span>
+        <span class="kw">SIP returns calculator</span>
+        <span class="kw">SIP maturity value</span>
+        <span class="kw">monthly investment calculator</span>
+        <span class="kw">top up SIP</span>
+        <span class="kw">SIP corpus</span>
+        <span class="kw">wealth calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const fmt = new Intl.NumberFormat(undefined, {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const a = parseFloat(document.getElementById('amount').value);
+      const r = parseFloat(document.getElementById('rate').value);
+      const y = parseInt(document.getElementById('years').value, 10);
+      const s = parseFloat(document.getElementById('stepup').value) || 0;
+
+      const result = pyCall(`logic.sip(${a}, ${r}, ${y}, ${s})`);
+      document.getElementById('result').textContent = fmt.format(result.future_value);
+      document.getElementById('invested').textContent = fmt.format(result.total_invested);
+      document.getElementById('returns').textContent = fmt.format(result.estimated_returns);
+
+      const tbody = document.getElementById('breakdown');
+      tbody.innerHTML = '';
+      for (const row of result.breakdown) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${row.year}</td>` +
+          `<td>${fmt.format(row.invested)}</td>` +
+          `<td>${fmt.format(row.value)}</td>` +
+          `<td>${fmt.format(row.gains)}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
