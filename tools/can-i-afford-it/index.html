@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Can I Afford It? Calculator — Price in Hours of Work | 1618.dev</title>
+  <meta name="description" content="See what a purchase really costs in hours of your life. Enter your pay and a price to find out how many hours, days, and weeks of work it takes — and what slice of a month's pay it eats." />
+  <meta name="keywords" content="can i afford it calculator, hours of work calculator, cost in hours of work, time value of money, work hours to buy, how many hours of work, price in work time, life energy calculator, real cost calculator, afford a purchase, hourly wage purchase, time cost calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/can-i-afford-it/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Can I Afford It? Calculator — Price in Hours of Work | 1618.dev" />
+  <meta property="og:description" content="Turn any price into hours, days, and weeks of work for what you earn. A quick perspective check before you buy. Runs entirely in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/can-i-afford-it/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Can I Afford It? Calculator — 1618.dev" />
+  <meta name="twitter:description" content="See what a purchase costs in hours of work for what you earn. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Can I Afford It? Calculator",
+    "description": "Express any purchase price as hours, days, and weeks of work for what you earn, plus its share of a month's take-home pay. A perspective tool, not financial advice. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/can-i-afford-it/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* This tool leads with a single big "hours of work" headline and a row of
+       supporting metrics; styles below are specific to it. */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      gap: 1rem;
+    }
+    .grid label { font-size: 0.85rem; }
+    .verdict {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .headline {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+    }
+    .headline .sub { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 1.1rem 0 0;
+    }
+    .metrics .metric { display: flex; flex-direction: column; }
+    .metrics .metric .val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics .metric .lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .breakdown {
+      margin: 0.6rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown b { color: var(--fg); font-weight: 600; }
+    .prefix-input { position: relative; }
+    .prefix-input .cur {
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .prefix-input input { padding-left: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Can I afford it?</h2>
+      <p class="muted">The real price of a thing isn't the number on the tag — it's the hours of your working life you trade for it. Enter what you earn and a price, and see the purchase in <strong>hours, days, and weeks of work</strong>. Everything runs in your browser; nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <div class="grid">
+          <label>
+            I earn
+            <div class="prefix-input">
+              <span class="cur" id="cur1">$</span>
+              <input type="number" id="income" value="30" min="0" step="any" />
+            </div>
+          </label>
+          <label>
+            per
+            <select id="basis">
+              <option value="hour" selected>hour</option>
+              <option value="week">week</option>
+              <option value="month">month</option>
+              <option value="year">year</option>
+            </select>
+          </label>
+          <label>
+            Purchase price
+            <div class="prefix-input">
+              <span class="cur" id="cur2">$</span>
+              <input type="number" id="price" value="1200" min="0" step="any" />
+            </div>
+          </label>
+        </div>
+
+        <div class="grid" style="margin-top:1rem">
+          <label>
+            Hours / week
+            <input type="number" id="hpw" value="40" min="1" max="168" step="any" />
+          </label>
+          <label>
+            Weeks / year
+            <input type="number" id="wpy" value="52" min="1" max="53" step="any" />
+          </label>
+          <label>
+            Keep after tax (%)
+            <input type="number" id="net" value="100" min="1" max="100" step="any" />
+          </label>
+          <label>
+            Currency symbol
+            <input type="text" id="sym" value="$" maxlength="3" />
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <span class="verdict" id="verdict">—</span>
+          <p class="headline"><span id="hours">—</span> <span class="sub">of work</span></p>
+          <div class="metrics">
+            <div class="metric">
+              <span class="val" id="days">—</span>
+              <span class="lbl">work days</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="weeks">—</span>
+              <span class="lbl">work weeks</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="month-share">—</span>
+              <span class="lbl">of a month's pay</span>
+            </div>
+          </div>
+          <p class="breakdown">
+            At <b id="hourly">—</b>/hour take-home · a work day here is
+            <b id="hpd">—</b> hours · <b id="net-note">—</b>
+          </p>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        First your pay is turned into an <strong>hourly</strong> figure: whatever
+        basis you quote it in (per hour, week, month or year) is annualised using
+        your schedule — <em>hours per week × weeks per year</em> — and divided
+        back down to one hour. The purchase price ÷ that hourly rate is the
+        <strong>hours of work</strong> it costs. Working days assume a five-day
+        week (so a day is a fifth of your weekly hours), working weeks use your
+        full weekly hours, and the month share is the price over a month's pay.
+      </p>
+      <p class="muted">
+        Set <strong>Keep after tax</strong> below 100% to reckon in take-home
+        money instead of gross — what you can actually spend. Halve your net pay
+        and everything doubles in work-hours, which is the honest way to feel a
+        tax rate. This is a perspective tool, not budgeting or financial advice:
+        it says nothing about your savings, debts, or what else the money could do.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../salary-take-home/">Salary take-home</a>
+        <a href="../loan-emi/">Loan EMI</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../tip-bill-splitter/">Tip &amp; bill splitter</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">can i afford it calculator</span>
+        <span class="kw">hours of work calculator</span>
+        <span class="kw">cost in hours of work</span>
+        <span class="kw">price in work time</span>
+        <span class="kw">how many hours of work</span>
+        <span class="kw">time value of money</span>
+        <span class="kw">life energy calculator</span>
+        <span class="kw">real cost calculator</span>
+        <span class="kw">hourly wage purchase</span>
+        <span class="kw">work hours to buy</span>
+        <span class="kw">time cost calculator</span>
+        <span class="kw">afford a purchase</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    // A days/weeks figure reads better with a decimal when it's small.
+    function fmtCount(x) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n >= 10 ? fmt(n, 0) : fmt(n, 1);
+    }
+
+    function syncSymbol() {
+      const s = document.getElementById('sym').value || '$';
+      document.getElementById('cur1').textContent = s;
+      document.getElementById('cur2').textContent = s;
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      syncSymbol();
+
+      const out = document.getElementById('output');
+      const sym = document.getElementById('sym').value || '$';
+      const income = parseFloat(document.getElementById('income').value);
+      const price = parseFloat(document.getElementById('price').value);
+
+      if (!Number.isFinite(income) || income <= 0 || !Number.isFinite(price)) {
+        out.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('p_price', price);
+      pyodide.globals.set('p_income', income);
+      pyodide.globals.set('p_basis', document.getElementById('basis').value);
+      pyodide.globals.set('p_hpw', parseFloat(document.getElementById('hpw').value) || 40);
+      pyodide.globals.set('p_wpy', parseFloat(document.getElementById('wpy').value) || 52);
+      pyodide.globals.set('p_net', parseFloat(document.getElementById('net').value) || 100);
+
+      let res;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.afford(p_price, p_income, p_basis, p_hpw, p_wpy, p_net)');
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        out.hidden = true;
+        return;
+      }
+
+      document.getElementById('verdict').textContent = res.verdict;
+      document.getElementById('hours').textContent = res.work_hours_label;
+      document.getElementById('days').textContent = fmtCount(res.work_days);
+      document.getElementById('weeks').textContent = fmtCount(res.work_weeks);
+      document.getElementById('month-share').textContent =
+        res.pct_of_month >= 1000 ? fmt(res.months_of_pay, 1) + '×' : fmt(res.pct_of_month, 0) + '%';
+      document.getElementById('hourly').textContent = sym + fmt(res.hourly_net, 2);
+      document.getElementById('hpd').textContent = fmt(res.hours_per_day, 1);
+      document.getElementById('net-note').textContent =
+        res.take_home_pct >= 100
+          ? 'gross pay (no tax applied)'
+          : 'after keeping ' + fmt(res.take_home_pct, 0) + '% of pay';
+      out.hidden = false;
+    }
+
+    ['income', 'price', 'hpw', 'wpy', 'net'].forEach(id =>
+      document.getElementById(id).addEventListener('input', calculate));
+    document.getElementById('basis').addEventListener('change', calculate);
+    document.getElementById('sym').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>

@@ -89,6 +89,7 @@ existing tool, so just confirm it's present:
 - `currency-converter` — Currency Converter (live ECB rates via Frankfurter API; 30+ currencies)
 - `tip-bill-splitter` — Tip & Bill Splitter (tip, total, per-person share; optional rounding up/nearest/down to a clean increment; currency-agnostic)
 - `salary-take-home` — Salary Take-Home Calculator by country (US/UK/CA/AU/IN/IE; headline income-tax bands + main employee social contributions; rough estimate, single filer, heavily disclaimed; data-driven `_DISPATCH` model in logic.py)
+- `can-i-afford-it` — "Can I afford it?" calculator (price → hours/days/weeks of work + share of a month's pay; income quoted per hour/week/month/year, annualised via hours-per-week × weeks-per-year; optional take-home % to reckon in net pay; live-update UI, currency-symbol field; perspective tool, not financial advice)
 
 ### Health
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial

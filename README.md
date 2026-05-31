@@ -29,6 +29,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Currency converter](tools/currency-converter/) — live forex rates between 30+ currencies, from European Central Bank reference rates
 - [Tip & bill splitter](tools/tip-bill-splitter/) — tip, grand total, and per-person share for any check, with optional rounding to a clean number
 - [Salary take-home](tools/salary-take-home/) — rough net-pay estimate from a gross salary for the US, UK, Canada, Australia, India and Ireland (income tax + main social contributions; not tax advice)
+- [Can I afford it?](tools/can-i-afford-it/) — turn any price into hours, days, and weeks of work for what you earn, plus its share of a month's take-home pay
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
