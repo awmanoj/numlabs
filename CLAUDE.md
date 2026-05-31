@@ -106,6 +106,7 @@ existing tool, so just confirm it's present:
 
 ### Developer
 - `json-formatter` — JSON Formatter / Validator (beautify with 2/4-space or tab indent, minify, optional sort-keys; line/column error reporting; UTF-8 preserved; stats: lines/bytes/values/depth)
+- `base64` — Base64 Encoder / Decoder (encode text → Base64 or decode back; standard and URL-safe alphabets; UTF-8 round-trip; tolerant decoding — strips whitespace, restores padding, accepts either alphabet; stats: input/output bytes, output chars)
 
 ## Backlog
 

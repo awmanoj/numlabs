@@ -46,6 +46,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 
 ### Developer
 - [JSON formatter](tools/json-formatter/) — beautify, validate, or minify JSON, with a choice of indentation, optional key sorting, and line/column error reporting
+- [Base64 encoder / decoder](tools/base64/) — encode text to Base64 or decode it back, with standard or URL-safe alphabet, full UTF-8 support, and tolerant decoding
 
 ## Run locally
 
