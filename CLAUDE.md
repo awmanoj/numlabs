@@ -94,6 +94,9 @@ existing tool, so just confirm it's present:
 - `bmi` — BMI (Body Mass Index) Calculator, metric + imperial
 - `age-calculator` — Age Calculator (years / months / days / total weeks / total days)
 
+### Everyday Life
+- `reading-time` — Reading Time Estimator (paste text → silent reading time and spoken-aloud time at a chosen wpm, plus word / character / chars-without-spaces / sentence / paragraph counts; live update on input; slow/average/fast presets + custom wpm; speaking time at a fixed ~130 wpm pace)
+
 ### Maths
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
 - `quadratic-equation` — Quadratic Equation Solver (roots real/complex, discriminant, vertex, axis of symmetry, Vieta sum/product, rational factored form)

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reading Time Estimator — How Long to Read & Speak Text | 1618.dev</title>
+  <meta name="description" content="Free online reading time estimator. Paste any text to see how long it takes to read silently and to speak aloud, plus word, character, sentence, and paragraph counts. Runs entirely in your browser." />
+  <meta name="keywords" content="reading time estimator, reading time calculator, words per minute, how long to read, speech time calculator, speaking time, word counter, character counter, reading speed, wpm calculator, estimate reading time, blog reading time" />
+  <link rel="canonical" href="https://1618.dev/tools/reading-time/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Reading Time Estimator — How Long to Read & Speak Text | 1618.dev" />
+  <meta property="og:description" content="Paste text to estimate reading and speaking time, with word, character, sentence, and paragraph counts. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/reading-time/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Reading Time Estimator — 1618.dev" />
+  <meta name="twitter:description" content="Estimate reading and speaking time for any text, with word and character counts. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Reading Time Estimator",
+    "description": "Free online reading time estimator. Paste any text to see how long it takes to read silently and to speak aloud, plus word, character, sentence, and paragraph counts. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/reading-time/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* Reading-time is text-heavy: a tall input and a prominent headline result.
+       These styles are specific to this tool. */
+    .rt-area {
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      min-height: 12rem;
+      width: 100%;
+      resize: vertical;
+    }
+    .headline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 0 0 0.25rem;
+    }
+    .headline .metric { display: flex; flex-direction: column; }
+    .headline .metric .val {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .headline .metric .lbl {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.5rem;
+      margin: 1rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .stats b { color: var(--fg); font-weight: 600; }
+    .opts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 1rem;
+    }
+    .opts label { font-size: 0.85rem; }
+    #custom-wrap { display: none; }
+    #custom-wrap.on { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Reading time estimator</h2>
+      <p class="muted">Paste or type any text to see how long it takes to read silently and to read aloud, plus a live word, character, sentence, and paragraph count. Pick a reading speed that matches your audience. Everything runs in your browser — nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <label>
+          Text
+          <textarea id="input" class="rt-area" spellcheck="false" placeholder="Paste your article, blog post, or speech here…"></textarea>
+        </label>
+
+        <div class="opts">
+          <label>
+            Reading speed
+            <select id="speed">
+              <option value="150">Slow — 150 wpm</option>
+              <option value="230" selected>Average — 230 wpm</option>
+              <option value="350">Fast — 350 wpm</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </label>
+          <label id="custom-wrap">
+            Words per minute
+            <input type="number" id="custom-wpm" value="230" min="50" max="1000" step="10" />
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="headline">
+            <div class="metric">
+              <span class="val" id="reading">—</span>
+              <span class="lbl">Reading time</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="speaking">—</span>
+              <span class="lbl">Speaking time</span>
+            </div>
+          </div>
+          <div class="stats">
+            <span><b id="stat-words">—</b> words</span>
+            <span><b id="stat-chars">—</b> characters</span>
+            <span><b id="stat-nospace">—</b> without spaces</span>
+            <span><b id="stat-sentences">—</b> sentences</span>
+            <span><b id="stat-paragraphs">—</b> paragraphs</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>What this does</h3>
+      <p class="muted">
+        Reading time is a simple ratio: the number of words divided by your
+        reading speed. The hard part is honest word counting, which this does the
+        same way a text editor would — runs of non-whitespace, so numbers and
+        hyphenated terms count once.
+      </p>
+      <p class="muted">
+        <b>Silent reading</b> for adults runs roughly 200–250 words per minute,
+        with 230 a common middle estimate; skim-readers go faster, careful or
+        non-native readers slower. <b>Speaking aloud</b> is much slower — around
+        130 words per minute is a comfortable presentation pace — so a script
+        that reads in two minutes takes well over three to deliver. Use the
+        speaking estimate when you're timing a speech, a voiceover, or a podcast
+        segment, and the reading estimate for the "5 min read" label on an
+        article.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">reading time estimator</span>
+        <span class="kw">reading time calculator</span>
+        <span class="kw">words per minute</span>
+        <span class="kw">how long to read</span>
+        <span class="kw">speech time calculator</span>
+        <span class="kw">speaking time</span>
+        <span class="kw">word counter</span>
+        <span class="kw">character counter</span>
+        <span class="kw">reading speed</span>
+        <span class="kw">wpm calculator</span>
+        <span class="kw">estimate reading time</span>
+        <span class="kw">blog reading time</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function currentWpm() {
+      const sel = document.getElementById('speed').value;
+      if (sel === 'custom') {
+        const v = parseInt(document.getElementById('custom-wpm').value, 10);
+        return Number.isFinite(v) ? v : 230;
+      }
+      return parseInt(sel, 10);
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      const outEl = document.getElementById('output');
+      const text = document.getElementById('input').value;
+
+      if (!text.trim()) {
+        outEl.hidden = true;
+        return;
+      }
+
+      // Pass the (possibly large, multiline) text via globals rather than
+      // splicing it into a Python source string — avoids any quoting traps.
+      pyodide.globals.set('input_text', text);
+      pyodide.globals.set('wpm', currentWpm());
+
+      const proxy = pyodide.runPython('logic.estimate(input_text, wpm)');
+      const result = proxy.toJs();
+      proxy.destroy();
+
+      document.getElementById('reading').textContent = result.get('reading_label');
+      document.getElementById('speaking').textContent = result.get('speaking_label');
+      document.getElementById('stat-words').textContent = result.get('words').toLocaleString();
+      document.getElementById('stat-chars').textContent = result.get('chars').toLocaleString();
+      document.getElementById('stat-nospace').textContent = result.get('chars_no_spaces').toLocaleString();
+      document.getElementById('stat-sentences').textContent = result.get('sentences').toLocaleString();
+      document.getElementById('stat-paragraphs').textContent = result.get('paragraphs').toLocaleString();
+      outEl.hidden = false;
+    }
+
+    function onSpeedChange() {
+      const sel = document.getElementById('speed').value;
+      const wrap = document.getElementById('custom-wrap');
+      wrap.classList.toggle('on', sel === 'custom');
+      calculate();
+    }
+
+    document.getElementById('form').addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('input').addEventListener('input', calculate);
+    document.getElementById('speed').addEventListener('change', onSpeedChange);
+    document.getElementById('custom-wpm').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>
