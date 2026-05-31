@@ -44,6 +44,9 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 ### Science
 - [pH / acid-base calculator](tools/ph-acid-base/) — pH, pOH, [H⁺] and [OH⁻]; pH of strong and weak acids and bases from concentration and Ka / Kb
 
+### Developer
+- [JSON formatter](tools/json-formatter/) — beautify, validate, or minify JSON, with a choice of indentation, optional key sorting, and line/column error reporting
+
 ## Run locally
 
 Each tool fetches its `logic.py` over HTTP, so `file://` will not work. Serve the repo with anything that returns static files. Easiest:

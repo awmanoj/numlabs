@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSON Formatter — Beautify, Validate & Minify JSON | 1618.dev</title>
+  <meta name="description" content="Free online JSON formatter and validator. Pretty-print JSON with 2/4-space or tab indentation, sort keys, or minify to one line. Pinpoints syntax errors by line and column. Runs entirely in your browser." />
+  <meta name="keywords" content="json formatter, json beautifier, json validator, json pretty print, json minifier, format json online, validate json, json lint, beautify json, json viewer, minify json, json parser, online json tool" />
+  <link rel="canonical" href="https://1618.dev/tools/json-formatter/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="JSON Formatter — Beautify, Validate & Minify | 1618.dev" />
+  <meta property="og:description" content="Pretty-print, validate, and minify JSON in your browser. Pinpoints syntax errors by line and column. Free, nothing uploaded." />
+  <meta property="og:url" content="https://1618.dev/tools/json-formatter/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="JSON Formatter — 1618.dev" />
+  <meta name="twitter:description" content="Beautify, validate, and minify JSON in your browser. Free, nothing uploaded." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "JSON Formatter",
+    "description": "Free online JSON formatter and validator. Pretty-print, validate, and minify JSON, with line/column error reporting. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/json-formatter/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* JSON formatter is text-heavy: monospace textareas, wider than the
+       default scalar result. These styles are specific to this tool. */
+    .json-area {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      min-height: 14rem;
+      width: 100%;
+      resize: vertical;
+      tab-size: 4;
+      white-space: pre;
+      overflow-wrap: normal;
+    }
+    #output-area { background: var(--bg); }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.5rem;
+      margin: 0.75rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .stats b { color: var(--fg); font-weight: 600; }
+    .error {
+      color: #c0392b;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .error { color: #ff8a80; }
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .opts {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 1rem;
+    }
+    .opts label { font-size: 0.85rem; }
+    .opts .check {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .opts .check input { width: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>JSON formatter</h2>
+      <p class="muted">Paste JSON to beautify, validate, or minify it. Choose your indentation, optionally sort object keys, and copy the result. Everything runs in your browser — nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <label>
+          JSON input
+          <textarea id="input" class="json-area" spellcheck="false" autocapitalize="off" autocomplete="off">{"name":"1618.dev","tools":["json-formatter","bmi"],"open_source":true,"daily":1}</textarea>
+        </label>
+
+        <div class="opts">
+          <label>
+            Indentation
+            <select id="indent">
+              <option value="2" selected>2 spaces</option>
+              <option value="4">4 spaces</option>
+              <option value="tab">Tab</option>
+              <option value="min">Minify (one line)</option>
+            </select>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="sort" />
+            Sort keys (A→Z)
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit" id="go" disabled>Loading Python…</button>
+        </div>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <label>
+            Result
+            <textarea id="output-area" class="json-area" readonly spellcheck="false"></textarea>
+          </label>
+          <div class="actions" style="margin-top:0.75rem">
+            <button type="button" id="copy" class="secondary">Copy</button>
+          </div>
+          <div class="stats">
+            <span><b id="stat-lines">—</b> lines</span>
+            <span><b id="stat-bytes">—</b> bytes</span>
+            <span><b id="stat-nodes">—</b> values</span>
+            <span>depth <b id="stat-depth">—</b></span>
+          </div>
+        </div>
+      </div>
+
+      <h3>What this does</h3>
+      <p class="muted">
+        The input is parsed by Python's standard <code>json</code> module and
+        re-serialized — so validation is exactly as strict as a real parser.
+        Comments, trailing commas, and single-quoted strings are
+        <em>not</em> valid JSON and will be flagged. When parsing fails, you
+        get the parser's own message together with the line and column of the
+        offending character, so you can jump straight to the problem.
+      </p>
+      <p class="muted">
+        <b>Minify</b> strips every optional space and newline for the smallest
+        payload. <b>Sort keys</b> orders each object's keys alphabetically,
+        which makes two JSON documents easy to diff. Non-ASCII text (accents,
+        emoji, other scripts) is kept as-is rather than escaped to
+        <code>\uXXXX</code>.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">json formatter</span>
+        <span class="kw">json beautifier</span>
+        <span class="kw">json validator</span>
+        <span class="kw">json pretty print</span>
+        <span class="kw">json minifier</span>
+        <span class="kw">format json online</span>
+        <span class="kw">validate json</span>
+        <span class="kw">json lint</span>
+        <span class="kw">beautify json</span>
+        <span class="kw">json viewer</span>
+        <span class="kw">minify json</span>
+        <span class="kw">json parser</span>
+        <span class="kw">json sort keys</span>
+        <span class="kw">json indent</span>
+        <span class="kw">online json tool</span>
+        <span class="kw">json syntax error</span>
+        <span class="kw">prettify json</span>
+        <span class="kw">json editor</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Format';
+      btn.disabled = false;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('error');
+      const outEl = document.getElementById('output');
+
+      const text = document.getElementById('input').value;
+      const indent = document.getElementById('indent').value;
+      const sort = document.getElementById('sort').checked;
+
+      // Pass the (possibly large, multiline) input via globals rather than
+      // splicing it into a Python source string — avoids any quoting traps.
+      pyodide.globals.set('input_text', text);
+      pyodide.globals.set('indent_mode', indent);
+      pyodide.globals.set('sort_keys', sort);
+
+      let result;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.format_json(input_text, indent_mode, sort_keys)'
+        );
+        result = proxy.toJs();
+        proxy.destroy();
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        outEl.hidden = true;
+        return;
+      }
+
+      errEl.hidden = true;
+      document.getElementById('output-area').value = result.get('output');
+      document.getElementById('stat-lines').textContent = result.get('lines').toLocaleString();
+      document.getElementById('stat-bytes').textContent = result.get('bytes').toLocaleString();
+      document.getElementById('stat-nodes').textContent = result.get('nodes').toLocaleString();
+      document.getElementById('stat-depth').textContent = result.get('depth').toLocaleString();
+      outEl.hidden = false;
+    }
+
+    async function copyOutput() {
+      const text = document.getElementById('output-area').value;
+      if (!text) return;
+      const btn = document.getElementById('copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied!';
+      } catch (err) {
+        // Fallback for browsers without the async clipboard API.
+        const area = document.getElementById('output-area');
+        area.select();
+        document.execCommand('copy');
+        btn.textContent = 'Copied!';
+      }
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    }
+
+    document.getElementById('form').addEventListener('submit', calculate);
+    document.getElementById('copy').addEventListener('click', copyOutput);
+    init();
+  </script>
+</body>
+</html>

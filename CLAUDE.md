@@ -104,6 +104,9 @@ existing tool, so just confirm it's present:
 ### Science
 - `ph-acid-base` — pH / acid-base calculator (pH ↔ pOH ↔ [H⁺] ↔ [OH⁻]; strong/weak acid/base pH from concentration and Ka/Kb)
 
+### Developer
+- `json-formatter` — JSON Formatter / Validator (beautify with 2/4-space or tab indent, minify, optional sort-keys; line/column error reporting; UTF-8 preserved; stats: lines/bytes/values/depth)
+
 ## Backlog
 
 _(empty — ask the user what to build next)_
