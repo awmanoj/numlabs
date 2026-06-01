@@ -30,6 +30,8 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Tip & bill splitter](tools/tip-bill-splitter/) — tip, grand total, and per-person share for any check, with optional rounding to a clean number
 - [Salary take-home](tools/salary-take-home/) — rough net-pay estimate from a gross salary for the US, UK, Canada, Australia, India and Ireland (income tax + main social contributions; not tax advice)
 - [Can I afford it?](tools/can-i-afford-it/) — turn any price into hours, days, and weeks of work for what you earn, plus its share of a month's take-home pay
+- [Coffee habit cost](tools/coffee-habit-cost/) — what a daily coffee costs per week, month, and year, plus what the same money could grow to if invested instead
+- [Freelance rate](tools/freelance-rate/) — the hourly rate you need to charge to hit a salary goal, after unpaid time off, non-billable hours, business expenses, and tax
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)

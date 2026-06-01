@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freelance Rate Calculator — Hourly Rate From Salary Goal | 1618.dev</title>
+  <meta name="description" content="Work out the hourly rate you need to charge as a freelancer to hit your salary goal. Accounts for unpaid time off, non-billable hours, business expenses, and tax — so you don't undercharge." />
+  <meta name="keywords" content="freelance rate calculator, hourly rate calculator, freelance hourly rate, what should i charge freelance, contractor day rate calculator, freelance pricing, billable hours calculator, salary to hourly freelance, self employed rate, consulting rate calculator, freelance income calculator, day rate calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/freelance-rate/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Freelance Rate Calculator — Hourly Rate From Salary Goal | 1618.dev" />
+  <meta property="og:description" content="The hourly rate you need to charge to hit your salary goal — after unpaid time off, non-billable hours, expenses, and tax. Runs entirely in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/freelance-rate/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Freelance Rate Calculator — 1618.dev" />
+  <meta name="twitter:description" content="What to charge per hour as a freelancer to hit your income goal, after time off, non-billable hours, expenses, and tax. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Freelance Rate Calculator",
+    "description": "Work backwards from the income you want to keep to the hourly rate you need to charge as a freelancer, accounting for unpaid time off, non-billable hours, business expenses, and tax. A pricing starting point, not financial advice. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/freelance-rate/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* This tool leads with a single big "per hour" headline and a row of
+       supporting rates; styles below are specific to it. */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      gap: 1rem;
+    }
+    .grid label { font-size: 0.85rem; }
+    .verdict {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .headline {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+    }
+    .headline .sub { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 1.1rem 0 0;
+    }
+    .metrics .metric { display: flex; flex-direction: column; }
+    .metrics .metric .val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics .metric .lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .breakdown {
+      margin: 0.6rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown b { color: var(--fg); font-weight: 600; }
+    .prefix-input { position: relative; }
+    .prefix-input .cur {
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .prefix-input input { padding-left: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Freelance rate</h2>
+      <p class="muted">Dividing a salary by 2,080 hours is how freelancers end up undercharging. You don't bill every working hour, you don't work every week, and the expenses and tax an employer used to absorb are now yours. Start from the income you actually want to <strong>keep</strong>, and this works backwards to the <strong>hourly rate</strong> you need to charge. Everything runs in your browser; nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <div class="grid">
+          <label>
+            Salary goal (per year)
+            <div class="prefix-input">
+              <span class="cur" id="cur1">$</span>
+              <input type="number" id="goal" value="80000" min="0" step="any" />
+            </div>
+          </label>
+          <label>
+            Business expenses (per year)
+            <div class="prefix-input">
+              <span class="cur" id="cur2">$</span>
+              <input type="number" id="exp" value="5000" min="0" step="any" />
+            </div>
+          </label>
+          <label>
+            Tax + self-employment (%)
+            <input type="number" id="tax" value="25" min="0" max="95" step="any" />
+          </label>
+          <label>
+            Currency symbol
+            <input type="text" id="sym" value="$" maxlength="3" />
+          </label>
+        </div>
+
+        <div class="grid" style="margin-top:1rem">
+          <label>
+            Working hours per week
+            <input type="number" id="hpw" value="40" min="0" step="any" />
+          </label>
+          <label>
+            Billable hours (%)
+            <input type="number" id="bill" value="70" min="0" max="100" step="any" />
+          </label>
+          <label>
+            Weeks off per year
+            <input type="number" id="off" value="6" min="0" max="51" step="any" />
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <span class="verdict" id="verdict">—</span>
+          <p class="headline"><span id="hourly">—</span> <span class="sub">per hour</span></p>
+          <div class="metrics">
+            <div class="metric">
+              <span class="val" id="day">—</span>
+              <span class="lbl">per day</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="week">—</span>
+              <span class="lbl">per week</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="month">—</span>
+              <span class="lbl">revenue / month</span>
+            </div>
+          </div>
+          <p class="breakdown">
+            You bill <b id="bhy">—</b> hours a year (<b id="weeks">—</b> working
+            weeks × <b id="bhw">—</b> billable h/week). To keep
+            <b id="target">—</b> after <b id="taxamt">—</b> tax, the business must
+            clear <b id="gross">—</b> a year.
+          </p>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        The rate is the income you need to clear, divided by the hours you can
+        actually sell. On the income side, your <strong>salary goal</strong> plus
+        <strong>business expenses</strong> is what's left <em>after</em> tax, so
+        it's grossed up by the <strong>tax</strong> rate to find the revenue the
+        business has to bring in.
+      </p>
+      <p class="muted">
+        On the hours side, a year is 52 weeks minus the <strong>weeks off</strong>
+        you take — holidays, vacation, sick days — and only the
+        <strong>billable percentage</strong> of each week's working hours reaches
+        a client. The rest is selling, admin, invoicing, and email: real work, but
+        nobody pays for it directly. Most freelancers bill well under 100%, which
+        is exactly why the salary-÷-2,080 shortcut leaves you short.
+      </p>
+      <p class="muted">
+        This is a floor for your pricing, not a market price. Charge what the work
+        is worth to the client — but knowing this number means you'll know when a
+        quote would quietly cost you money. It's a starting point, not financial
+        advice.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../can-i-afford-it/">Can I afford it?</a>
+        <a href="../coffee-habit-cost/">Coffee habit cost</a>
+        <a href="../salary-take-home/">Salary take-home</a>
+        <a href="../loan-emi/">Loan EMI</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">freelance rate calculator</span>
+        <span class="kw">hourly rate calculator</span>
+        <span class="kw">what should i charge freelance</span>
+        <span class="kw">contractor day rate</span>
+        <span class="kw">billable hours calculator</span>
+        <span class="kw">freelance pricing</span>
+        <span class="kw">salary to hourly freelance</span>
+        <span class="kw">consulting rate calculator</span>
+        <span class="kw">self employed hourly rate</span>
+        <span class="kw">how much to charge freelance</span>
+        <span class="kw">freelance income goal</span>
+        <span class="kw">day rate calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    // Money: a small figure reads better with cents, a big one rounds off.
+    function money(sym, x) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return sym + fmt(n, n !== 0 && Math.abs(n) < 100 ? 2 : 0);
+    }
+
+    function syncSymbol() {
+      const s = document.getElementById('sym').value || '$';
+      document.getElementById('cur1').textContent = s;
+      document.getElementById('cur2').textContent = s;
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      syncSymbol();
+
+      const out = document.getElementById('output');
+      const sym = document.getElementById('sym').value || '$';
+      const goal = parseFloat(document.getElementById('goal').value);
+      const exp = parseFloat(document.getElementById('exp').value);
+
+      if (!Number.isFinite(goal) || goal < 0 || (Number.isFinite(exp) && exp < 0)) {
+        out.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('p_goal', goal);
+      pyodide.globals.set('p_exp', Number.isFinite(exp) ? exp : 0);
+      pyodide.globals.set('p_off', parseFloat(document.getElementById('off').value) || 0);
+      pyodide.globals.set('p_hpw', parseFloat(document.getElementById('hpw').value) || 0);
+      pyodide.globals.set('p_bill', parseFloat(document.getElementById('bill').value) || 0);
+      pyodide.globals.set('p_tax', parseFloat(document.getElementById('tax').value) || 0);
+
+      let res;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.freelance(p_goal, p_exp, p_off, p_hpw, p_bill, p_tax)');
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        out.hidden = true;
+        return;
+      }
+
+      document.getElementById('verdict').textContent = res.verdict;
+      document.getElementById('hourly').textContent = money(sym, res.hourly_rate);
+      document.getElementById('day').textContent = money(sym, res.day_rate);
+      document.getElementById('week').textContent = money(sym, res.week_rate);
+      document.getElementById('month').textContent = money(sym, res.month_revenue);
+      document.getElementById('bhy').textContent = fmt(res.billable_hours_year, 0);
+      document.getElementById('weeks').textContent = fmt(res.working_weeks, res.working_weeks % 1 ? 1 : 0);
+      document.getElementById('bhw').textContent = fmt(res.billable_hours_week, res.billable_hours_week % 1 ? 1 : 0);
+      document.getElementById('target').textContent = money(sym, res.after_tax_target);
+      document.getElementById('taxamt').textContent = money(sym, res.tax_amount);
+      document.getElementById('gross').textContent = money(sym, res.gross_needed);
+      out.hidden = false;
+    }
+
+    ['goal', 'exp', 'off', 'hpw', 'bill', 'tax'].forEach(id =>
+      document.getElementById(id).addEventListener('input', calculate));
+    document.getElementById('sym').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>

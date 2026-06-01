@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coffee Habit Cost Calculator — Daily Coffee Adds Up | 1618.dev</title>
+  <meta name="description" content="See what your daily coffee really costs. Enter a price per cup and find the weekly, monthly, and yearly total — plus what it could grow to if you invested the money instead. Eye-opening." />
+  <meta name="keywords" content="coffee habit cost calculator, daily coffee cost, cost of coffee per year, latte factor calculator, how much do i spend on coffee, coffee spending calculator, daily expense calculator, small habit cost, coffee budget, invest instead of coffee, opportunity cost calculator, latte factor" />
+  <link rel="canonical" href="https://1618.dev/tools/coffee-habit-cost/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Coffee Habit Cost Calculator — Daily Coffee Adds Up | 1618.dev" />
+  <meta property="og:description" content="Turn a daily coffee into its weekly, monthly, and yearly cost — and what it could have grown to if invested. A quick reality check. Runs entirely in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/coffee-habit-cost/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Coffee Habit Cost Calculator — 1618.dev" />
+  <meta name="twitter:description" content="What your daily coffee costs per year, and what it could grow to if invested instead. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Coffee Habit Cost Calculator",
+    "description": "Express a recurring daily purchase like coffee as its weekly, monthly, and yearly cost, plus what the same money could grow to if invested instead. A perspective tool, not financial advice. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/coffee-habit-cost/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* This tool leads with a single big "per year" headline and a row of
+       supporting metrics; styles below are specific to it. */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      gap: 1rem;
+    }
+    .grid label { font-size: 0.85rem; }
+    .verdict {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .headline {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+    }
+    .headline .sub { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 1.1rem 0 0;
+    }
+    .metrics .metric { display: flex; flex-direction: column; }
+    .metrics .metric .val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics .metric .lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .breakdown {
+      margin: 0.6rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown b { color: var(--fg); font-weight: 600; }
+    .prefix-input { position: relative; }
+    .prefix-input .cur {
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .prefix-input input { padding-left: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Coffee habit cost</h2>
+      <p class="muted">A single cup feels like nothing. Bought every day, it quietly turns into one of the bigger numbers in your year. Enter what a coffee costs and how often you buy one, and see the habit as a <strong>weekly, monthly, and yearly</strong> total — then what the same money could grow to if it were <strong>invested instead</strong>. Everything runs in your browser; nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <div class="grid">
+          <label>
+            Price per cup
+            <div class="prefix-input">
+              <span class="cur" id="cur1">₹</span>
+              <input type="number" id="price" value="150" min="0" step="any" />
+            </div>
+          </label>
+          <label>
+            Cups per day
+            <input type="number" id="cups" value="1" min="0" step="any" />
+          </label>
+          <label>
+            Days per week
+            <input type="number" id="dpw" value="7" min="0" max="7" step="any" />
+          </label>
+          <label>
+            Currency symbol
+            <input type="text" id="sym" value="₹" maxlength="3" />
+          </label>
+        </div>
+
+        <div class="grid" style="margin-top:1rem">
+          <label>
+            Project over (years)
+            <input type="number" id="years" value="10" min="0" max="100" step="any" />
+          </label>
+          <label>
+            If invested, return (%/yr)
+            <input type="number" id="ret" value="7" min="0" max="100" step="any" />
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <span class="verdict" id="verdict">—</span>
+          <p class="headline"><span id="yearly">—</span> <span class="sub">a year</span></p>
+          <div class="metrics">
+            <div class="metric">
+              <span class="val" id="daily">—</span>
+              <span class="lbl">per day</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="weekly">—</span>
+              <span class="lbl">per week</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="monthly">—</span>
+              <span class="lbl">per month</span>
+            </div>
+          </div>
+          <p class="breakdown">
+            Over <b id="yrs">—</b> years that's <b id="spend">—</b> spent · invested
+            at <b id="rate">—</b>/yr it could grow to <b id="invested">—</b>
+            (<b id="gain">—</b> of that is growth).
+          </p>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        The yearly figure is the simple one everybody quotes:
+        <em>price × cups a day × 365</em>. Buy on only some days — weekdays, say —
+        and the <strong>days per week</strong> field scales it down (5 of 7 days
+        keeps five-sevenths of the cost). The weekly number is the price times
+        cups times days a week; the monthly number is the yearly total split
+        twelve ways.
+      </p>
+      <p class="muted">
+        The eye-opener is the last line. Instead of spending the money, imagine
+        paying the same <strong>monthly</strong> amount into an investment that
+        returns the rate you set, compounded monthly, for the years you choose.
+        That's the pot the habit quietly costs you — most of it from the cups,
+        the rest from the growth you never got. It's a perspective tool, not a
+        verdict: plenty of small pleasures are worth their price. This just shows
+        you the price.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../can-i-afford-it/">Can I afford it?</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../sip-calculator/">SIP calculator</a>
+        <a href="../salary-take-home/">Salary take-home</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">coffee habit cost calculator</span>
+        <span class="kw">daily coffee cost</span>
+        <span class="kw">cost of coffee per year</span>
+        <span class="kw">latte factor</span>
+        <span class="kw">how much do i spend on coffee</span>
+        <span class="kw">coffee spending calculator</span>
+        <span class="kw">small habit cost</span>
+        <span class="kw">invest instead of coffee</span>
+        <span class="kw">opportunity cost calculator</span>
+        <span class="kw">daily expense calculator</span>
+        <span class="kw">coffee budget</span>
+        <span class="kw">money reality check</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    // Money: a small figure reads better with paise/cents, a big one rounds off.
+    function money(sym, x) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return sym + fmt(n, n !== 0 && Math.abs(n) < 100 ? 2 : 0);
+    }
+
+    function syncSymbol() {
+      const s = document.getElementById('sym').value || '₹';
+      document.getElementById('cur1').textContent = s;
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      syncSymbol();
+
+      const out = document.getElementById('output');
+      const sym = document.getElementById('sym').value || '₹';
+      const price = parseFloat(document.getElementById('price').value);
+      const cups = parseFloat(document.getElementById('cups').value);
+
+      if (!Number.isFinite(price) || price < 0 || !Number.isFinite(cups) || cups < 0) {
+        out.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('p_price', price);
+      pyodide.globals.set('p_cups', cups);
+      pyodide.globals.set('p_dpw', parseFloat(document.getElementById('dpw').value) || 0);
+      pyodide.globals.set('p_years', parseFloat(document.getElementById('years').value) || 0);
+      pyodide.globals.set('p_ret', parseFloat(document.getElementById('ret').value) || 0);
+
+      let res;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.coffee(p_price, p_cups, p_dpw, p_years, p_ret)');
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        out.hidden = true;
+        return;
+      }
+
+      document.getElementById('verdict').textContent = res.verdict;
+      document.getElementById('yearly').textContent = money(sym, res.yearly);
+      document.getElementById('daily').textContent = money(sym, res.daily_avg);
+      document.getElementById('weekly').textContent = money(sym, res.weekly);
+      document.getElementById('monthly').textContent = money(sym, res.monthly);
+      document.getElementById('yrs').textContent = fmt(res.years, res.years % 1 ? 1 : 0);
+      document.getElementById('spend').textContent = money(sym, res.projected_spend);
+      document.getElementById('rate').textContent = fmt(res.annual_return, res.annual_return % 1 ? 1 : 0) + '%';
+      document.getElementById('invested').textContent = money(sym, res.invested);
+      document.getElementById('gain').textContent = money(sym, res.invested_gain);
+      out.hidden = false;
+    }
+
+    ['price', 'cups', 'dpw', 'years', 'ret'].forEach(id =>
+      document.getElementById(id).addEventListener('input', calculate));
+    document.getElementById('sym').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>
