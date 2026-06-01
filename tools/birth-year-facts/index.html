@@ -50,7 +50,8 @@
     #year {
       font-size: 2rem;
       font-weight: 700;
-      width: 7rem;
+      width: 9rem;
+      box-sizing: border-box;
       font-variant-numeric: tabular-nums;
       text-align: center;
     }
@@ -228,7 +229,7 @@
 
       const ul = document.getElementById('events');
       ul.innerHTML = '';
-      const events = result.get('events').toJs();
+      const events = result.get('events');
       const hasEvents = result.get('has_events');
       document.getElementById('highlights-title').textContent =
         'Highlights of ' + result.get('year');
