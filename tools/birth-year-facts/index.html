@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Birth Year Fun Facts — What Happened the Year You Were Born | 1618.dev</title>
+  <meta name="description" content="Enter any year to see fun facts about it — what released and what happened, the age you turn this year, your generation, Chinese zodiac sign, leap year, and the year in Roman numerals." />
+  <meta name="keywords" content="birth year fun facts, what happened the year I was born, year facts, year you were born, what year was I born, chinese zodiac by year, generation calculator, leap year checker, year in roman numerals, what happened in 1995, birthday facts, how old am i" />
+  <link rel="canonical" href="https://1618.dev/tools/birth-year-facts/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Birth Year Fun Facts — What Happened the Year You Were Born | 1618.dev" />
+  <meta property="og:description" content="Pick a year to see what released and happened, the age you turn this year, your generation, Chinese zodiac, leap year, and Roman numerals. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/birth-year-facts/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Birth Year Fun Facts — 1618.dev" />
+  <meta name="twitter:description" content="What happened the year you were born, plus your generation, Chinese zodiac, leap year, and Roman numerals. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Birth Year Fun Facts",
+    "description": "Enter any year to see fun facts about it — what released and what happened, the age you turn this year, your generation, Chinese zodiac sign, leap year, and the year in Roman numerals.",
+    "url": "https://1618.dev/tools/birth-year-facts/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* A big year input and a card of fact "chips" plus a list of highlights.
+       These styles are specific to this tool. */
+    .year-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 1rem;
+    }
+    #year {
+      font-size: 2rem;
+      font-weight: 700;
+      width: 7rem;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+    .summary {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      margin: 0 0 0.75rem;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0 0 0.25rem;
+    }
+    .chip {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border, #2a2a2a);
+      border-radius: 0.6rem;
+      min-width: 5rem;
+    }
+    .chip .v {
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .chip .l {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .highlights { margin: 1.25rem 0 0; }
+    .highlights h3 { margin: 0 0 0.5rem; }
+    .highlights ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      line-height: 1.7;
+    }
+    .no-events {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 1rem 0 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Birth year fun facts</h2>
+      <p class="muted">Pick a year — your birth year, or any other — and see what was released and what happened, the age someone born then turns this year, their generation, Chinese zodiac sign, whether it was a leap year, and the year written in Roman numerals. Everything runs in your browser.</p>
+
+      <form id="form" class="card">
+        <div class="year-row">
+          <label>
+            Year
+            <input type="number" id="year" value="1995" min="1900" max="2030" step="1" />
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <p class="summary" id="summary">—</p>
+          <div class="chips">
+            <div class="chip">
+              <span class="v" id="chip-decade">—</span>
+              <span class="l">Decade</span>
+            </div>
+            <div class="chip">
+              <span class="v" id="chip-generation">—</span>
+              <span class="l">Generation</span>
+            </div>
+            <div class="chip">
+              <span class="v" id="chip-zodiac">—</span>
+              <span class="l">Chinese zodiac</span>
+            </div>
+            <div class="chip">
+              <span class="v" id="chip-leap">—</span>
+              <span class="l">Leap / common</span>
+            </div>
+            <div class="chip">
+              <span class="v" id="chip-roman">—</span>
+              <span class="l">Roman numerals</span>
+            </div>
+          </div>
+
+          <div class="highlights">
+            <h3 id="highlights-title">Highlights</h3>
+            <ul id="events"></ul>
+            <p class="no-events" id="no-events" hidden>No curated highlights for this year yet — but the facts above hold for any year.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>What this does</h3>
+      <p class="muted">
+        The <b>highlights</b> are a hand-picked list of what released or happened
+        in well-known years — the films, gadgets, games, and moments people
+        remember. Years outside that list still get the rest of the card.
+      </p>
+      <p class="muted">
+        The <b>age</b> is simply this year minus your year. The <b>generation</b>
+        uses the common Western cohort bands (Boomer, Gen X, Millennial, Gen Z,
+        and so on). The <b>Chinese zodiac</b> follows the twelve-animal cycle and
+        its five elements, repeating every sixty years. The <b>leap-year</b> check
+        uses the full Gregorian rule, and the <b>Roman numerals</b> are valid for
+        years 1 through 3999.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../reading-time/">Reading time estimator</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">birth year fun facts</span>
+        <span class="kw">what happened the year I was born</span>
+        <span class="kw">year you were born</span>
+        <span class="kw">chinese zodiac by year</span>
+        <span class="kw">generation calculator</span>
+        <span class="kw">leap year checker</span>
+        <span class="kw">year in roman numerals</span>
+        <span class="kw">what happened in 1995</span>
+        <span class="kw">birthday facts</span>
+        <span class="kw">how old am i</span>
+        <span class="kw">year facts</span>
+        <span class="kw">what year was i born</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      const outEl = document.getElementById('output');
+      const raw = document.getElementById('year').value;
+      const year = parseInt(raw, 10);
+
+      if (!Number.isFinite(year) || year < 1 || year > 3999) {
+        outEl.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('year', year);
+      const proxy = pyodide.runPython('logic.facts(year)');
+      const result = proxy.toJs();
+      proxy.destroy();
+
+      document.getElementById('summary').textContent = result.get('summary');
+      document.getElementById('chip-decade').textContent = result.get('decade');
+      document.getElementById('chip-generation').textContent = result.get('generation');
+      document.getElementById('chip-zodiac').textContent = result.get('zodiac');
+      document.getElementById('chip-leap').textContent = result.get('leap_label');
+      document.getElementById('chip-roman').textContent = result.get('roman');
+
+      const ul = document.getElementById('events');
+      ul.innerHTML = '';
+      const events = result.get('events').toJs();
+      const hasEvents = result.get('has_events');
+      document.getElementById('highlights-title').textContent =
+        'Highlights of ' + result.get('year');
+      for (const ev of events) {
+        const li = document.createElement('li');
+        li.textContent = ev;
+        ul.appendChild(li);
+      }
+      document.getElementById('no-events').hidden = hasEvents;
+
+      outEl.hidden = false;
+    }
+
+    document.getElementById('form').addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('year').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>

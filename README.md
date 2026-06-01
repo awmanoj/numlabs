@@ -40,6 +40,9 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 ### Everyday Life
 - [Reading time estimator](tools/reading-time/) — how long any text takes to read silently or speak aloud, with word, character, sentence, and paragraph counts
 
+### Personality & Fun
+- [Birth year fun facts](tools/birth-year-facts/) — what released and happened the year you were born, plus the age you turn this year, your generation, Chinese zodiac, leap year, and Roman numerals
+
 ### Maths
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
 - [Quadratic equation solver](tools/quadratic-equation/) — roots (real or complex), discriminant, vertex, axis of symmetry, and factored form of ax²+bx+c=0
