@@ -109,6 +109,7 @@ existing tool, so just confirm it's present:
 
 ### Science
 - `ph-acid-base` — pH / acid-base calculator (pH ↔ pOH ↔ [H⁺] ↔ [OH⁻]; strong/weak acid/base pH from concentration and Ka/Kb)
+- `speed-distance-time` — Speed / distance / time calculator (give any two, solve the third via distance = speed × time; converts each quantity through SI base units — m, s, m/s — so mixed units work, then reports the answer in every supported unit; distance mm/cm/m/km/in/ft/yd/mi/nmi, speed m/s/km/h/mph/ft/s/knot, time s/min/h/day; rejects zero divisor and same-quantity/target-collision inputs; treats velocity as plain average speed, no direction)
 
 ### Developer
 - `json-formatter` — JSON Formatter / Validator (beautify with 2/4-space or tab indent, minify, optional sort-keys; line/column error reporting; UTF-8 preserved; stats: lines/bytes/values/depth)

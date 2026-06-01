@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speed Distance Time Calculator — Solve Any Two | 1618.dev</title>
+  <meta name="description" content="Free speed, distance and time calculator. Enter any two and get the third, in metric and imperial units — km/h, mph, m/s, knots, miles, km, minutes, hours. Runs in your browser." />
+  <meta name="keywords" content="speed distance time calculator, velocity calculator, distance calculator, time calculator, speed calculator, km/h to mph, average speed calculator, travel time calculator, distance equals speed times time, m/s to km/h, knots calculator, how long will it take calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/speed-distance-time/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Speed Distance Time Calculator — 1618.dev" />
+  <meta property="og:description" content="Enter any two of speed, distance and time and get the third — metric and imperial units. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/speed-distance-time/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Speed Distance Time Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Solve for speed, distance or time from the other two, in metric and imperial units. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Speed / Distance / Time Calculator",
+    "description": "Free speed, distance and time calculator. Enter any two of speed, distance and time and get the third, in metric and imperial units.",
+    "url": "https://1618.dev/tools/speed-distance-time/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>speed / distance / time calculator</h2>
+      <p class="muted">Constant-speed travel ties the three together by <em>distance = speed &times; time</em>. Enter any two and the third is solved for, then shown in every unit. Velocity is treated as plain speed (no direction).</p>
+
+      <form id="form" class="card">
+        <label>
+          Solve for
+          <select id="target">
+            <option value="speed" selected>Speed (from distance &amp; time)</option>
+            <option value="distance">Distance (from speed &amp; time)</option>
+            <option value="time">Time (from distance &amp; speed)</option>
+          </select>
+        </label>
+
+        <label id="field-distance">
+          Distance
+          <span class="inline">
+            <input type="number" id="distance" value="120" min="0" step="any" />
+            <select id="distance-unit">
+              <option value="mm">mm</option>
+              <option value="cm">cm</option>
+              <option value="m">m</option>
+              <option value="km" selected>km</option>
+              <option value="in">in</option>
+              <option value="ft">ft</option>
+              <option value="yd">yd</option>
+              <option value="mi">mi</option>
+              <option value="nmi">nautical mi</option>
+            </select>
+          </span>
+        </label>
+
+        <label id="field-speed">
+          Speed
+          <span class="inline">
+            <input type="number" id="speed" value="60" min="0" step="any" />
+            <select id="speed-unit">
+              <option value="m/s">m/s</option>
+              <option value="km/h" selected>km/h</option>
+              <option value="mph">mph</option>
+              <option value="ft/s">ft/s</option>
+              <option value="knot">knots</option>
+            </select>
+          </span>
+        </label>
+
+        <label id="field-time">
+          Time
+          <span class="inline">
+            <input type="number" id="time" value="2" min="0" step="any" />
+            <select id="time-unit">
+              <option value="s">seconds</option>
+              <option value="min">minutes</option>
+              <option value="h" selected>hours</option>
+              <option value="day">days</option>
+            </select>
+          </span>
+        </label>
+
+        <button type="submit" id="go" disabled>Loading Python&hellip;</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="r-label">Speed</span>
+            <span id="r-main">&mdash;</span>
+          </div>
+          <table style="margin-top:1rem">
+            <tbody id="r-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>Formulas</h3>
+      <div class="formula">distance = speed &times; time</div>
+      <div class="formula" style="margin-top:0.4rem">speed = distance &divide; time</div>
+      <div class="formula" style="margin-top:0.4rem">time = distance &divide; speed</div>
+      <p class="muted" style="margin-top:0.6rem">
+        These assume a <strong>constant speed</strong> over the whole trip, so
+        the &ldquo;speed&rdquo; you compute from a distance and a time is really
+        the <em>average</em> speed. Real journeys speed up and slow down; this is
+        the steady pace that would cover the same ground in the same time.
+      </p>
+      <p class="muted" style="margin-top:0.4rem">
+        Units are converted through SI base units &mdash; metres, seconds and
+        metres per second &mdash; so any mix works: 60&nbsp;mph for 30&nbsp;minutes,
+        or 100&nbsp;m at 10&nbsp;m/s. The answer is then expressed in every unit of
+        that quantity so you can read off whichever you need. 1&nbsp;knot is one
+        nautical mile (1852&nbsp;m) per hour; 1&nbsp;mile is 1609.344&nbsp;m.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../ph-acid-base/">pH / acid-base calculator</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">speed distance time calculator</span>
+        <span class="kw">velocity calculator</span>
+        <span class="kw">average speed calculator</span>
+        <span class="kw">travel time calculator</span>
+        <span class="kw">distance calculator</span>
+        <span class="kw">km/h to mph</span>
+        <span class="kw">m/s to km/h</span>
+        <span class="kw">how long will it take</span>
+        <span class="kw">distance speed time formula</span>
+        <span class="kw">knots calculator</span>
+        <span class="kw">mph calculator</span>
+        <span class="kw">physics speed calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    const FIELDS = ['distance', 'speed', 'time'];
+    const TITLE = { distance: 'Distance', speed: 'Speed', time: 'Time' };
+
+    function updateTarget() {
+      const target = document.getElementById('target').value;
+      for (const f of FIELDS) {
+        document.getElementById('field-' + f).hidden = (f === target);
+      }
+      document.getElementById('output').hidden = true;
+    }
+
+    function fmt(x) {
+      if (!Number.isFinite(x)) return '—';
+      const a = Math.abs(x);
+      if (a !== 0 && (a < 1e-3 || a >= 1e7)) return x.toExponential(4);
+      // up to 4 significant decimals, trimmed
+      return parseFloat(x.toFixed(6)).toLocaleString(undefined, { maximumFractionDigits: 4 });
+    }
+
+    function val(id) {
+      const n = parseFloat(document.getElementById(id).value);
+      if (!Number.isFinite(n)) throw new Error('Enter a valid number');
+      return n;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const target = document.getElementById('target').value;
+      const others = FIELDS.filter(f => f !== target);
+      try {
+        const a = others[0], b = others[1];
+        const expr = `logic.solve(${JSON.stringify(target)}, `
+          + `${val(a)}, ${JSON.stringify(document.getElementById(a + '-unit').value)}, `
+          + `${val(b)}, ${JSON.stringify(document.getElementById(b + '-unit').value)})`;
+        const r = pyCall(expr);
+
+        document.getElementById('r-label').textContent = TITLE[target];
+        const rows = r.breakdown;
+        const main = rows[0];
+        document.getElementById('r-main').textContent = `${fmt(main.value)} ${main.label}`;
+
+        const tbody = document.getElementById('r-rows');
+        tbody.innerHTML = '';
+        for (const row of rows) {
+          const tr = document.createElement('tr');
+          const td1 = document.createElement('td');
+          td1.textContent = row.label;
+          const td2 = document.createElement('td');
+          td2.style.fontVariantNumeric = 'tabular-nums';
+          td2.textContent = fmt(row.value);
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tbody.appendChild(tr);
+        }
+        document.getElementById('output').hidden = false;
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+      }
+    }
+
+    document.getElementById('target').addEventListener('change', updateTarget);
+    document.getElementById('form').addEventListener('submit', calculate);
+    updateTarget();
+    init();
+  </script>
+</body>
+</html>

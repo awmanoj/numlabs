@@ -52,6 +52,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 
 ### Science
 - [pH / acid-base calculator](tools/ph-acid-base/) — pH, pOH, [H⁺] and [OH⁻]; pH of strong and weak acids and bases from concentration and Ka / Kb
+- [Speed / distance / time calculator](tools/speed-distance-time/) — give any two of speed, distance and time, get the third, in metric and imperial units
 
 ### Developer
 - [JSON formatter](tools/json-formatter/) — beautify, validate, or minify JSON, with a choice of indentation, optional key sorting, and line/column error reporting

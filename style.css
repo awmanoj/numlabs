@@ -103,6 +103,11 @@ input:focus, select:focus {
   outline-offset: 1px;
 }
 
+/* value + unit pair on one row: input flexes, unit select sizes to content */
+.inline { display: flex; gap: 0.5rem; }
+.inline input { flex: 1 1 auto; }
+.inline select { flex: 0 0 auto; width: auto; }
+
 button {
   font: inherit;
   font-weight: 500;
