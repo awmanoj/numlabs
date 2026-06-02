@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Days Left on Earth Calculator — Your Life in Weeks | 1618.dev</title>
+  <meta name="description" content="See how much of your life has gone by and how much is left. Enter your birthday and a life expectancy to get days, weeks, and summers remaining — drawn as a life-in-weeks grid." />
+  <meta name="keywords" content="days left on earth calculator, life in weeks, how many weeks do i have left, life expectancy calculator, weeks of life calculator, how many days have i lived, life calendar, your life in weeks, time left to live, mortality calculator, days alive counter, life weeks grid" />
+  <link rel="canonical" href="https://1618.dev/tools/days-left-on-earth/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Days Left on Earth Calculator — Your Life in Weeks | 1618.dev" />
+  <meta property="og:description" content="How much of your life is spent, and how much is left — in days, weeks, and summers — drawn as a grid where every square is one week. A quiet reality check." />
+  <meta property="og:url" content="https://1618.dev/tools/days-left-on-earth/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Days Left on Earth Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Your whole life as a grid of weeks: how many squares you've filled and how many are left. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Days Left on Earth Calculator",
+    "description": "Estimate how much of your life has passed and how much remains, in days, weeks, months and years, and see it drawn as a life-in-weeks grid where every square is one week. A perspective tool, not a prediction. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/days-left-on-earth/",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* A single big "weeks left" headline, a row of supporting metrics, a
+       progress bar, and the life-in-weeks grid below. */
+    .grid-in {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+      gap: 1rem;
+    }
+    .grid-in label { font-size: 0.85rem; }
+    .verdict {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .headline {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+    }
+    .headline .sub { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 1.1rem 0 0;
+    }
+    .metrics .metric { display: flex; flex-direction: column; }
+    .metrics .metric .val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics .metric .lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .bar {
+      margin: 1.1rem 0 0;
+      height: 0.6rem;
+      border-radius: 0.3rem;
+      background: var(--border);
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.2s ease;
+    }
+    .bar-cap {
+      margin: 0.4rem 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .bar-cap b { color: var(--fg); font-weight: 600; }
+
+    /* The life-in-weeks grid: 52 squares (one year) per row, one square a
+       week. Squares scale with the container so it fits on a phone. */
+    .life-grid {
+      display: grid;
+      grid-template-columns: repeat(52, 1fr);
+      gap: 2px;
+      margin-top: 0.6rem;
+    }
+    .life-grid .box {
+      aspect-ratio: 1 / 1;
+      border-radius: 1px;
+      background: var(--border);
+    }
+    .life-grid .box.filled { background: var(--accent); }
+    .life-grid .box.current {
+      background: var(--fg);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.2rem;
+      margin: 0.8rem 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .legend i {
+      width: 0.8rem;
+      height: 0.8rem;
+      border-radius: 1px;
+      display: inline-block;
+    }
+    .legend i.lived { background: var(--accent); }
+    .legend i.now { background: var(--fg); box-shadow: 0 0 0 1px var(--accent); }
+    .legend i.left { background: var(--border); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Days left on Earth</h2>
+      <p class="muted">A whole human life is a surprisingly small, countable number of weeks. Enter your <strong>date of birth</strong> and a <strong>life expectancy</strong>, and see how much of it has gone by — in days, weeks, and summers — and how much, on that estimate, is left. The grid below draws your life one square at a time: <strong>each square is a single week</strong>, each row about a year. Nobody knows their real number; this is a nudge, not a prediction. Everything runs in your browser; nothing is uploaded.</p>
+
+      <form id="form" class="card">
+        <div class="grid-in">
+          <label>
+            Date of birth
+            <input type="date" id="birth" value="1990-01-01" />
+          </label>
+          <label>
+            Life expectancy (years)
+            <input type="number" id="life" value="80" min="1" max="125" step="1" />
+          </label>
+        </div>
+        <div class="chips" id="presets" style="margin-top:0.25rem">
+          <button type="button" class="chip" data-life="73">World avg · 73</button>
+          <button type="button" class="chip" data-life="80">80</button>
+          <button type="button" class="chip" data-life="85">85</button>
+          <button type="button" class="chip" data-life="90">90</button>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <span class="verdict" id="verdict">—</span>
+          <p class="headline"><span id="weeksLeft">—</span> <span class="sub">weeks left</span></p>
+          <div class="metrics">
+            <div class="metric">
+              <span class="val" id="daysLived">—</span>
+              <span class="lbl">days lived</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="daysLeft">—</span>
+              <span class="lbl">days left</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="summers">—</span>
+              <span class="lbl">summers left</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="age">—</span>
+              <span class="lbl">age now</span>
+            </div>
+          </div>
+          <div class="bar"><span id="barFill" style="width:0%"></span></div>
+          <p class="bar-cap">
+            <b id="pct">—</b> of an <b id="leYears">—</b>-year life lived ·
+            <b id="weeksLived">—</b> of <b id="weeksTotal">—</b> weeks filled ·
+            estimate runs out around <b id="endDate">—</b>.
+          </p>
+        </div>
+
+        <div class="card">
+          <p class="muted" style="margin-top:0">Your life in weeks — one square per week, ~52 to a row (a year). The filled squares are gone; the empty ones are what the estimate leaves you.</p>
+          <div class="life-grid" id="lifeGrid"></div>
+          <div class="legend">
+            <span><i class="lived"></i> weeks lived</span>
+            <span><i class="now"></i> this week</span>
+            <span><i class="left"></i> weeks left</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        <strong>Days lived</strong> is just today minus your birthday in whole
+        days. A life of the expectancy you set is taken as that many years ×
+        365.25 days (the quarter-day keeps leap years honest) and about 52 weeks
+        a year. <strong>Weeks lived</strong> is your days divided by seven;
+        <strong>weeks left</strong> is the rest, and the
+        <strong>expected date</strong> is your birthday plus the full lifespan.
+      </p>
+      <p class="muted">
+        The grid is the point. Drawing a life as a few thousand small squares
+        makes the abstract suddenly concrete: a single average week is one tiny
+        cell, and there are not that many of them. Live past the estimate and
+        everything pins to done — the grid fills, weeks-left reads zero, and the
+        framing changes to say every week from here is a bonus. It's a
+        perspective tool, not a forecast: one life expectancy hides a wide
+        spread, and nobody actually knows their number. Spend the squares well.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../coffee-habit-cost/">Coffee habit cost</a>
+        <a href="../can-i-afford-it/">Can I afford it?</a>
+        <a href="../age-calculator/">Age calculator</a>
+        <a href="../birth-year-facts/">Birth year fun facts</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">days left on earth calculator</span>
+        <span class="kw">life in weeks</span>
+        <span class="kw">your life in weeks</span>
+        <span class="kw">how many weeks do i have left</span>
+        <span class="kw">life expectancy calculator</span>
+        <span class="kw">how many days have i lived</span>
+        <span class="kw">life calendar</span>
+        <span class="kw">weeks of life</span>
+        <span class="kw">time left to live</span>
+        <span class="kw">days alive counter</span>
+        <span class="kw">mortality perspective</span>
+        <span class="kw">life reality check</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      calculate();
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    // The browser's local date, as YYYY-MM-DD, so the answer matches the
+    // user's own calendar rather than the server's UTC day.
+    function todayISO() {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+
+    function fmtDate(iso) {
+      // iso is YYYY-MM-DD; build a local date to avoid UTC off-by-one.
+      const [y, m, d] = iso.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long',
+      });
+    }
+
+    // Build the life-in-weeks grid as one HTML string (a few thousand nodes,
+    // so avoid per-square DOM calls). One <i> = one week.
+    function drawGrid(weeksLived, weeksTotal) {
+      const parts = new Array(weeksTotal);
+      for (let i = 0; i < weeksTotal; i++) {
+        let cls = 'box';
+        if (i < weeksLived) cls += ' filled';
+        else if (i === weeksLived) cls += ' current';
+        parts[i] = `<i class="${cls}"></i>`;
+      }
+      document.getElementById('lifeGrid').innerHTML = parts.join('');
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+
+      const out = document.getElementById('output');
+      const birth = document.getElementById('birth').value;
+      const life = parseFloat(document.getElementById('life').value);
+
+      if (!birth || !Number.isFinite(life) || life <= 0) {
+        out.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('p_birth', birth);
+      pyodide.globals.set('p_life', life);
+      pyodide.globals.set('p_today', todayISO());
+
+      let res;
+      try {
+        const proxy = pyodide.runPython(
+          'logic.days_left(p_birth, p_life, today=p_today)');
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        out.hidden = true;
+        return;
+      }
+
+      document.getElementById('verdict').textContent = res.verdict;
+      document.getElementById('weeksLeft').textContent = fmt(res.weeks_left);
+      document.getElementById('daysLived').textContent = fmt(res.days_lived);
+      document.getElementById('daysLeft').textContent = fmt(res.days_left);
+      document.getElementById('summers').textContent = fmt(res.summers_left);
+      document.getElementById('age').textContent = fmt(res.age_years_int);
+      document.getElementById('pct').textContent =
+        fmt(res.pct_lived, res.pct_lived % 1 ? 1 : 0) + '%';
+      document.getElementById('leYears').textContent = fmt(res.life_expectancy);
+      document.getElementById('weeksLived').textContent = fmt(res.weeks_lived);
+      document.getElementById('weeksTotal').textContent = fmt(res.weeks_total);
+      document.getElementById('endDate').textContent = fmtDate(res.end);
+      document.getElementById('barFill').style.width =
+        Math.max(0, Math.min(100, res.pct_lived)) + '%';
+
+      drawGrid(res.weeks_lived, res.weeks_total);
+      out.hidden = false;
+    }
+
+    document.getElementById('presets').addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip');
+      if (!btn) return;
+      document.getElementById('life').value = btn.dataset.life;
+      calculate();
+    });
+
+    ['birth', 'life'].forEach(id =>
+      document.getElementById(id).addEventListener('input', calculate));
+    init();
+  </script>
+</body>
+</html>

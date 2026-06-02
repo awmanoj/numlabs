@@ -31,6 +31,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Salary take-home](tools/salary-take-home/) — rough net-pay estimate from a gross salary for the US, UK, Canada, Australia, India and Ireland (income tax + main social contributions; not tax advice)
 - [Can I afford it?](tools/can-i-afford-it/) — turn any price into hours, days, and weeks of work for what you earn, plus its share of a month's take-home pay
 - [Coffee habit cost](tools/coffee-habit-cost/) — what a daily coffee costs per week, month, and year, plus what the same money could grow to if invested instead
+- [Days left on Earth](tools/days-left-on-earth/) — how much of your life is spent and how much is left, in days, weeks and summers, drawn as a life-in-weeks grid (each square is one week)
 - [Freelance rate](tools/freelance-rate/) — the hourly rate you need to charge to hit a salary goal, after unpaid time off, non-billable hours, business expenses, and tax
 
 ### Health
