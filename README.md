@@ -33,6 +33,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Coffee habit cost](tools/coffee-habit-cost/) — what a daily coffee costs per week, month, and year, plus what the same money could grow to if invested instead
 - [Days left on Earth](tools/days-left-on-earth/) — how much of your life is spent and how much is left, in days, weeks and summers, drawn as a life-in-weeks grid (each square is one week)
 - [Freelance rate](tools/freelance-rate/) — the hourly rate you need to charge to hit a salary goal, after unpaid time off, non-billable hours, business expenses, and tax
+- [If I had invested…](tools/if-i-invested/) — what a lump sum in an Indian stock or index (Reliance, TCS, Infosys, HDFC Bank, the Sensex…) at a past year-end would be worth today: growth multiple, total return, and CAGR, dividends reinvested
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)

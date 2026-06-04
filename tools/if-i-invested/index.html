@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>If I Had Invested Calculator — Indian Stock Time Machine | 1618.dev</title>
+  <meta name="description" content="See what ₹1,00,000 invested in Reliance, TCS, Infosys, HDFC Bank or the Sensex years ago would be worth today. Pick a stock and a year and watch the money grow. Dividends reinvested." />
+  <meta name="keywords" content="if i had invested calculator, stock return calculator india, reliance share price history, sensex returns calculator, what if i invested in tcs, infosys share returns, indian stock cagr calculator, lump sum return calculator, nifty returns, hdfc bank share returns, wealth created calculator, stock time machine" />
+  <link rel="canonical" href="https://1618.dev/tools/if-i-invested/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="If I Had Invested Calculator — Indian Stock Time Machine | 1618.dev" />
+  <meta property="og:description" content="Pick an Indian stock or index and a year, and see what a lump sum invested back then would be worth today — growth multiple, total return and CAGR. Runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/if-i-invested/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="If I Had Invested Calculator — 1618.dev" />
+  <meta name="twitter:description" content="What ₹1,00,000 in Reliance, TCS or the Sensex years ago would be worth today. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "If I Had Invested Calculator (Indian Stocks)",
+    "description": "Shows what a lump sum invested in an Indian stock or index at the end of a past year would be worth today, using year-end split- and dividend-adjusted prices. An illustration of past performance, not investment advice. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/if-i-invested/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* Lead with one big "worth today" headline, then a row of supporting
+       metrics and a plain-language breakdown sentence. */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      gap: 1rem;
+    }
+    .grid label { font-size: 0.85rem; }
+    .verdict {
+      display: inline-block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    .headline {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+      margin: 0;
+    }
+    .headline .sub { font-size: 1rem; font-weight: 400; color: var(--muted); }
+    .metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 2.5rem;
+      margin: 1.1rem 0 0;
+    }
+    .metrics .metric { display: flex; flex-direction: column; }
+    .metrics .metric .val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .metrics .metric .lbl {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .breakdown {
+      margin: 0.9rem 0 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .breakdown b { color: var(--fg); font-weight: 600; }
+    .asof { margin: 0.5rem 0 0; font-size: 0.78rem; color: var(--muted); }
+    .prefix-input { position: relative; }
+    .prefix-input .cur {
+      position: absolute;
+      left: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .prefix-input input { padding-left: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>If I had invested…</h2>
+      <p class="muted">Pick an Indian stock or index, a year, and a lump sum, and see what it would be <strong>worth today</strong>. The numbers use year-end <strong>adjusted</strong> closing prices — already corrected for stock splits, bonus issues and dividends — so the result is a <strong>total return</strong>, as if dividends were reinvested. Prices are a fixed snapshot, not a live quote. Everything runs in your browser.</p>
+
+      <form id="form" class="card">
+        <div class="grid">
+          <label>
+            Stock or index
+            <select id="stock"></select>
+          </label>
+          <label>
+            Invested at end of
+            <select id="year"></select>
+          </label>
+          <label>
+            Amount invested
+            <div class="prefix-input">
+              <span class="cur" id="cur1">₹</span>
+              <input type="number" id="amount" value="100000" min="0" step="any" />
+            </div>
+          </label>
+        </div>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <span class="verdict" id="verdict">—</span>
+          <p class="headline"><span id="value">—</span> <span class="sub">worth today</span></p>
+          <div class="metrics">
+            <div class="metric">
+              <span class="val" id="invested">—</span>
+              <span class="lbl">you put in</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="gain">—</span>
+              <span class="lbl">total gain</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="multiple">—</span>
+              <span class="lbl">your money</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="cagr">—</span>
+              <span class="lbl">per year (CAGR)</span>
+            </div>
+            <div class="metric">
+              <span class="val" id="held">—</span>
+              <span class="lbl">years held</span>
+            </div>
+          </div>
+          <p class="breakdown">
+            <b id="amt2">—</b> in <b id="name2">—</b> at the end of <b id="yr2">—</b>
+            would be worth <b id="val2">—</b> today — a <b id="mult2">—</b> return,
+            about <b id="cagr2">—</b> a year. The price went from
+            <b id="p0">—</b> to <b id="p1">—</b>.
+          </p>
+          <p class="asof" id="asof">—</p>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <p class="muted">
+        Each stock carries its <strong>year-end adjusted close</strong> for every
+        year we have data, plus its latest price. The value today is simply your
+        amount scaled by how much the price grew:
+        <em>value = amount × (price today ÷ price then)</em>. The
+        <strong>multiple</strong> is that ratio, the <strong>total gain</strong> is
+        the rupees on top of what you put in, and the <strong>CAGR</strong> is the
+        single annual growth rate that turns the first number into the second over
+        the years held.
+      </p>
+      <p class="muted">
+        Adjusted prices fold in splits, bonus issues and dividends, so two stocks
+        are compared on a like-for-like total-return basis. The data is a static
+        snapshot taken on the date shown above — this is a static site with no
+        backend, so it doesn't update live. Past performance is just that: a record
+        of what happened, not a promise about what will. This is an illustration,
+        <strong>not investment advice</strong>.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../sip-calculator/">SIP calculator</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../currency-converter/">Currency converter</a>
+        <a href="../salary-take-home/">Salary take-home</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">if i had invested calculator</span>
+        <span class="kw">stock return calculator india</span>
+        <span class="kw">reliance share returns</span>
+        <span class="kw">sensex returns calculator</span>
+        <span class="kw">what if i invested in tcs</span>
+        <span class="kw">infosys share price history</span>
+        <span class="kw">hdfc bank share returns</span>
+        <span class="kw">indian stock cagr calculator</span>
+        <span class="kw">lump sum return calculator</span>
+        <span class="kw">nifty 50 returns</span>
+        <span class="kw">wealth created calculator</span>
+        <span class="kw">stock time machine</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+    let CATALOG = null;          // { as_of, stocks: [...] }
+    let BY_SYMBOL = {};          // symbol -> stock meta
+
+    // Indian-style grouping (lakh/crore) for rupee figures.
+    const inr = new Intl.NumberFormat('en-IN');
+
+    function money(sym, x, decimals = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return sym + new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(n);
+    }
+
+    function fmt(x, digits = 0) {
+      const n = Number(x);
+      if (!Number.isFinite(n)) return '—';
+      return n.toLocaleString('en-IN', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    function fillStocks() {
+      const sel = document.getElementById('stock');
+      const groups = {};
+      for (const s of CATALOG.stocks) {
+        BY_SYMBOL[s.symbol] = s;
+        (groups[s.group] = groups[s.group] || []).push(s);
+      }
+      for (const group of Object.keys(groups)) {
+        const og = document.createElement('optgroup');
+        og.label = group;
+        for (const s of groups[group]) {
+          const o = document.createElement('option');
+          o.value = s.symbol;
+          o.textContent = s.name;
+          og.appendChild(o);
+        }
+        sel.appendChild(og);
+      }
+      sel.value = 'RELIANCE.NS';
+    }
+
+    // Rebuild the year dropdown for the chosen stock, keeping the old year if
+    // it's still available (otherwise default to ~25 years back or the oldest).
+    function fillYears() {
+      const yearSel = document.getElementById('year');
+      const prev = yearSel.value;
+      const s = BY_SYMBOL[document.getElementById('stock').value];
+      yearSel.innerHTML = '';
+      for (let i = s.years.length - 1; i >= 0; i--) {
+        const y = s.years[i];
+        const o = document.createElement('option');
+        o.value = String(y);
+        o.textContent = String(y);
+        yearSel.appendChild(o);
+      }
+      if (s.years.map(String).includes(prev)) {
+        yearSel.value = prev;
+      } else {
+        const target = s.years.find(y => y <= 2000);
+        yearSel.value = String(target != null ? target : s.years[0]);
+      }
+    }
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const proxy = pyodide.runPython('logic.catalog()');
+      CATALOG = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      fillStocks();
+      fillYears();
+      calculate();
+    }
+
+    function calculate() {
+      if (!pyodide) return;
+      const out = document.getElementById('output');
+      const symbol = document.getElementById('stock').value;
+      const year = parseInt(document.getElementById('year').value, 10);
+      const amount = parseFloat(document.getElementById('amount').value);
+
+      if (!Number.isFinite(amount) || amount < 0 || !Number.isFinite(year)) {
+        out.hidden = true;
+        return;
+      }
+
+      pyodide.globals.set('p_symbol', symbol);
+      pyodide.globals.set('p_amount', amount);
+      pyodide.globals.set('p_year', year);
+
+      let res;
+      try {
+        const proxy = pyodide.runPython('logic.invest(p_symbol, p_amount, p_year)');
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (err) {
+        out.hidden = true;
+        return;
+      }
+
+      const sym = res.currency_symbol || '₹';
+
+      document.getElementById('verdict').textContent =
+        res.multiple >= 1 ? fmt(res.multiple, 1) + '× your money' : 'a loss';
+      document.getElementById('value').textContent = money(sym, res.value);
+      document.getElementById('invested').textContent = money(sym, res.amount);
+      document.getElementById('gain').textContent = money(sym, res.gain);
+      document.getElementById('multiple').textContent = fmt(res.multiple, 1) + '×';
+      document.getElementById('cagr').textContent = fmt(res.cagr_pct, 1) + '%';
+      document.getElementById('held').textContent = fmt(res.years_held, 1);
+
+      document.getElementById('amt2').textContent = money(sym, res.amount);
+      document.getElementById('name2').textContent = res.name;
+      document.getElementById('yr2').textContent = res.year;
+      document.getElementById('val2').textContent = money(sym, res.value);
+      document.getElementById('mult2').textContent = fmt(res.multiple, 1) + '×';
+      document.getElementById('cagr2').textContent = fmt(res.cagr_pct, 1) + '%';
+      document.getElementById('p0').textContent = money(sym, res.start_price, 2);
+      document.getElementById('p1').textContent = money(sym, res.now_price, 2);
+
+      document.getElementById('asof').textContent =
+        'Prices as of ' + res.as_of + ' · year-end adjusted close (splits, bonuses & dividends folded in) · illustration, not advice.';
+      out.hidden = false;
+    }
+
+    document.getElementById('stock').addEventListener('change', () => {
+      fillYears();
+      calculate();
+    });
+    document.getElementById('year').addEventListener('change', calculate);
+    document.getElementById('amount').addEventListener('input', calculate);
+    init();
+  </script>
+</body>
+</html>
