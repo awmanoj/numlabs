@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Golden Ratio Calculator — Phi, Rectangles & Fibonacci | 1618.dev</title>
+  <meta name="description" content="Free golden ratio calculator. Find the phi partners of any number, check how close two numbers are to 1.618, size a golden rectangle, see phi to 1000 decimals, and watch Fibonacci ratios converge on phi." />
+  <meta name="keywords" content="golden ratio calculator, phi calculator, 1.618 calculator, golden rectangle calculator, golden ratio in nature, fibonacci golden ratio, phi to 1000 decimals, golden ratio body, divine proportion, golden section calculator, golden mean, golden ratio face" />
+  <link rel="canonical" href="https://1618.dev/tools/golden-ratio/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Golden Ratio Calculator — 1618.dev" />
+  <meta property="og:description" content="Phi partners of any number, golden rectangles, golden-ratio checks, phi to 1000 decimals, and Fibonacci convergence. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/golden-ratio/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Golden Ratio Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Phi partners, golden rectangles, phi to 1000 decimals, and Fibonacci convergence on 1.618. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Golden Ratio Calculator",
+    "description": "Free golden ratio calculator. Find the phi partners of any number, check two numbers against 1.618, size a golden rectangle, see phi to 1000 decimals, and watch Fibonacci ratios converge on phi.",
+    "url": "https://1618.dev/tools/golden-ratio/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Golden Ratio Calculator</h2>
+      <p class="muted">
+        The golden ratio &phi; = (1 + &radic;5) &divide; 2 = 1.6180339887&hellip; is the number
+        that solves &phi;&sup2; = &phi; + 1, so 1&divide;&phi; = &phi; &minus; 1 = 0.618&hellip; Pick a mode,
+        then scroll on for &phi; to 1000 places, the Fibonacci connection, and where &phi;
+        shows up in nature and the human face.
+      </p>
+
+      <form id="form" class="card">
+        <label>
+          Mode
+          <select id="mode">
+            <option value="counterpart" selected>Golden partner of a number</option>
+            <option value="compare">Are two numbers golden?</option>
+            <option value="rectangle">Golden rectangle</option>
+            <option value="body">Is your body golden?</option>
+          </select>
+        </label>
+
+        <label id="field-n">
+          Number
+          <input type="number" id="n" value="100" step="any" />
+        </label>
+
+        <div id="field-compare" hidden>
+          <label>
+            First number
+            <input type="number" id="ca" value="1920" step="any" min="0" />
+          </label>
+          <label style="margin-top:1rem">
+            Second number
+            <input type="number" id="cb" value="1080" step="any" min="0" />
+          </label>
+        </div>
+
+        <label id="field-rect" hidden>
+          Width
+          <input type="number" id="rw" value="100" step="any" min="0" />
+        </label>
+
+        <div id="field-body" hidden>
+          <label>
+            Total height
+            <input type="number" id="bh" value="180" step="any" min="0" />
+          </label>
+          <label style="margin-top:1rem">
+            Navel height from the floor (same unit)
+            <input type="number" id="bn" value="110" step="any" min="0" />
+          </label>
+        </div>
+
+        <button type="submit" id="go" disabled>Loading Python&hellip;</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="r-label">Result</span>
+            <span id="r-main">&mdash;</span>
+          </div>
+          <p class="muted" id="r-note" style="margin-top:0.6rem" hidden></p>
+          <table style="margin-top:1rem">
+            <tbody id="r-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>&phi; to 1000 decimal places</h3>
+      <p class="muted">
+        Computed exactly with integer square roots &mdash; every digit is correct,
+        truncated (not rounded) at the last place.
+      </p>
+      <form id="digits-form" class="card" style="margin-bottom:0.5rem">
+        <label>
+          Decimal places
+          <span class="inline">
+            <input type="number" id="places" value="100" min="0" max="2000" step="1" />
+            <button type="submit" class="secondary" id="digits-go" disabled>Show &phi;</button>
+          </span>
+        </label>
+        <div class="chips">
+          <button type="button" class="chip" data-places="10">10</button>
+          <button type="button" class="chip" data-places="50">50</button>
+          <button type="button" class="chip" data-places="100">100</button>
+          <button type="button" class="chip" data-places="500">500</button>
+          <button type="button" class="chip" data-places="1000">1000</button>
+        </div>
+      </form>
+      <div class="formula" id="digits-out" style="word-break:break-all" hidden>&mdash;</div>
+
+      <h3>Fibonacci &rarr; &phi;</h3>
+      <p class="muted">
+        Divide each Fibonacci number by the one before it &mdash; 1, 2, 3, 5, 8, 13, 21&hellip;
+        &mdash; and the ratio zig-zags ever closer to &phi;, overshooting and undershooting
+        by less each time. It is the simplest place &phi; falls out of plain counting.
+      </p>
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Ratio</th><th>Value</th><th>Distance from &phi;</th></tr>
+          </thead>
+          <tbody id="fib-rows"></tbody>
+        </table>
+      </div>
+
+      <h3>The golden spiral</h3>
+      <p class="muted">
+        Quarter-circles drawn inside nested golden rectangles trace a logarithmic
+        spiral that grows by a factor of &phi; every quarter-turn &mdash; the same
+        self-similar curve a nautilus shell, a fern frond, and a spiral galaxy's
+        arms approximate.
+      </p>
+      <div class="card" style="text-align:center">
+        <svg viewBox="-1 -1 264 164" width="100%" style="max-width:440px;height:auto" role="img" aria-label="Golden spiral inside nested golden rectangles">
+          <g fill="none" stroke="var(--border)" stroke-width="1">
+            <rect x="0" y="0" width="262" height="162" stroke="var(--muted)"/>
+            <line x1="162" y1="0" x2="162" y2="162"/>
+            <line x1="162" y1="62" x2="262" y2="62"/>
+            <line x1="200" y1="0" x2="200" y2="62"/>
+            <line x1="162" y1="38" x2="200" y2="38"/>
+          </g>
+          <path d="M0,0 A162,162 0 0 1 162,162
+                   A100,100 0 0 1 262,62
+                   A62,62 0 0 1 200,0
+                   A38,38 0 0 1 162,38"
+                fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+        </svg>
+      </div>
+
+      <h3>&phi; in nature</h3>
+      <p class="muted">
+        &phi; turns up wherever growth packs things efficiently &mdash; it is the
+        &ldquo;most irrational&rdquo; number, the hardest to approximate with fractions,
+        which is exactly why it spaces things out without repeating:
+      </p>
+      <ul class="muted">
+        <li><strong>Sunflowers &amp; pinecones:</strong> seeds and scales spiral in counts that are
+          consecutive Fibonacci numbers (often 34 and 55), set at the golden angle of
+          ~137.5&deg; so each new seed lands in the largest remaining gap.</li>
+        <li><strong>Nautilus &amp; snail shells:</strong> grow as logarithmic spirals, widening
+          by a near-constant factor each turn &mdash; the same self-similar growth the
+          golden spiral idealises.</li>
+        <li><strong>Plant stems (phyllotaxis):</strong> leaves emerge at the golden angle so
+          higher leaves shade lower ones as little as possible.</li>
+        <li><strong>Galaxies &amp; weather:</strong> spiral galaxy arms and hurricanes trace
+          logarithmic spirals close in feel to the golden spiral.</li>
+      </ul>
+      <p class="muted">
+        A caveat worth keeping: many &ldquo;&phi; in nature&rdquo; claims are loose. The
+        Fibonacci spiral counts in sunflowers are real and well studied; perfect golden
+        rectangles overlaid on shells and faces are usually after-the-fact and approximate.
+      </p>
+
+      <h3>&phi; and the human face &amp; body</h3>
+      <p class="muted">
+        The classic &ldquo;divine proportion&rdquo; idea is that pleasing faces carry &phi;
+        in their measurements &mdash; total face length &divide; width, the mouth&rsquo;s width
+        &divide; the nose&rsquo;s, the distance between the eyes versus the width of an eye, and
+        so on hovering near 1.618. The <em>Is your body golden?</em> mode above uses the
+        best-known body version: height &divide; navel-to-floor height. Treat all of this as
+        play, not science &mdash; real faces and bodies vary widely, and the &ldquo;ideal&rdquo;
+        ratios are picked loosely after the fact. It is a fun yard-stick, nothing more.
+      </p>
+
+      <h3>How it works</h3>
+      <div class="formula">&phi; = (1 + &radic;5) &divide; 2 = 1.6180339887&hellip;</div>
+      <div class="formula" style="margin-top:0.4rem">&phi;&sup2; = &phi; + 1 &nbsp;&nbsp; 1 &divide; &phi; = &phi; &minus; 1 = 0.618&hellip;</div>
+      <p class="muted" style="margin-top:0.6rem">
+        The <strong>larger</strong> partner of a number is that number &times; &phi;; the
+        <strong>smaller</strong> is the number &divide; &phi;. A <strong>golden cut</strong> splits a
+        length into a long and a short part whose ratio is &phi; : 1; the long part is the
+        whole &divide; &phi;. A <strong>golden rectangle</strong> has its sides in the ratio &phi; : 1,
+        so a width&rsquo;s golden height is either width &times; &phi; (portrait) or width &divide; &phi;
+        (landscape) &mdash; both are golden. To <strong>check</strong> two numbers we divide the
+        larger by the smaller and report how far that sits from &phi; as a percentage.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../quadratic-equation/">Quadratic equation solver</a>
+        <a href="../roman-numeral/">Roman numeral converter</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">golden ratio calculator</span>
+        <span class="kw">phi calculator</span>
+        <span class="kw">1.618 calculator</span>
+        <span class="kw">golden rectangle calculator</span>
+        <span class="kw">golden section calculator</span>
+        <span class="kw">divine proportion</span>
+        <span class="kw">golden mean</span>
+        <span class="kw">golden ratio in nature</span>
+        <span class="kw">fibonacci golden ratio</span>
+        <span class="kw">phi to 1000 decimals</span>
+        <span class="kw">golden ratio body</span>
+        <span class="kw">golden ratio face</span>
+        <span class="kw">golden spiral</span>
+        <span class="kw">golden angle 137.5</span>
+        <span class="kw">is it golden ratio</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      for (const id of ['go', 'digits-go']) {
+        document.getElementById(id).disabled = false;
+      }
+      document.getElementById('go').textContent = 'Calculate';
+      renderFibonacci();
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function fmt(x, dp) {
+      if (!Number.isFinite(x)) return '—';
+      const a = Math.abs(x);
+      if (a !== 0 && (a < 1e-4 || a >= 1e12)) return x.toExponential(4);
+      const max = dp === undefined ? 4 : dp;
+      return parseFloat(x.toFixed(8)).toLocaleString(undefined, { maximumFractionDigits: max });
+    }
+
+    function val(id) {
+      const n = parseFloat(document.getElementById(id).value);
+      if (!Number.isFinite(n)) throw new Error('Enter a valid number');
+      return n;
+    }
+
+    // ---- main calculator ----------------------------------------------------
+
+    const PANELS = { counterpart: 'field-n', compare: 'field-compare',
+                     rectangle: 'field-rect', body: 'field-body' };
+
+    function updateMode() {
+      const mode = document.getElementById('mode').value;
+      for (const [m, id] of Object.entries(PANELS)) {
+        document.getElementById(id).hidden = (m !== mode);
+      }
+      document.getElementById('output').hidden = true;
+    }
+
+    function row(label, value) {
+      return { label, value };
+    }
+
+    function build(mode) {
+      if (mode === 'counterpart') {
+        const r = pyCall(`logic.counterpart(${val('n')})`);
+        return {
+          label: 'Golden partners',
+          main: `${fmt(r.smaller)} &nbsp;·&nbsp; ${fmt(r.n)} &nbsp;·&nbsp; ${fmt(r.larger)}`,
+          note: 'The number itself, between its smaller (÷φ) and larger (×φ) golden partners.',
+          rows: [
+            row('Larger (n × φ)', r.larger),
+            row('Smaller (n ÷ φ)', r.smaller),
+            row('Golden cut — long part', r.long_part),
+            row('Golden cut — short part', r.short_part),
+          ],
+        };
+      }
+      if (mode === 'compare') {
+        const r = pyCall(`logic.compare(${val('ca')}, ${val('cb')})`);
+        return {
+          label: 'Ratio of the two',
+          main: fmt(r.ratio, 5),
+          note: r.verdict,
+          rows: [
+            row('Their ratio (larger ÷ smaller)', r.ratio),
+            row('φ', r.phi),
+            row('Difference from φ', r.difference),
+            row('Off by', `${fmt(Math.abs(r.pct_error), 3)}%`),
+          ],
+        };
+      }
+      if (mode === 'rectangle') {
+        const r = pyCall(`logic.rectangle(${val('rw')})`);
+        const t = r.tall, w = r.wide;
+        return {
+          label: 'Golden height',
+          main: `${fmt(t.height)} <span class="muted" style="font-size:1rem">(portrait)</span>`,
+          note: `For width ${fmt(r.width)}: a portrait golden rectangle is ${fmt(r.width)} × ${fmt(t.height)}; a landscape one is ${fmt(r.width)} × ${fmt(w.height)}.`,
+          rows: [
+            row('Portrait height (width × φ)', t.height),
+            row('Portrait area', t.area),
+            row('Portrait diagonal', t.diagonal),
+            row('Landscape height (width ÷ φ)', w.height),
+            row('Landscape area', w.area),
+            row('Landscape diagonal', w.diagonal),
+          ],
+        };
+      }
+      // body
+      const r = pyCall(`logic.body_check(${val('bh')}, ${val('bn')})`);
+      return {
+        label: 'Height ÷ navel height',
+        main: fmt(r.ratio, 4),
+        note: r.verdict,
+        rows: [
+          row('Your ratio', r.ratio),
+          row('φ', r.phi),
+          row('Off by', `${fmt(Math.abs(r.pct_error), 3)}%`),
+          row('Navel height for an exact φ', r.ideal_navel),
+        ],
+      };
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      try {
+        const res = build(document.getElementById('mode').value);
+        document.getElementById('r-label').textContent = res.label;
+        document.getElementById('r-main').innerHTML = res.main;
+        const note = document.getElementById('r-note');
+        note.textContent = res.note || '';
+        note.hidden = !res.note;
+
+        const tbody = document.getElementById('r-rows');
+        tbody.innerHTML = '';
+        for (const rw of res.rows) {
+          const tr = document.createElement('tr');
+          const td1 = document.createElement('td');
+          td1.textContent = rw.label;
+          const td2 = document.createElement('td');
+          td2.style.fontVariantNumeric = 'tabular-nums';
+          td2.textContent = typeof rw.value === 'number' ? fmt(rw.value) : rw.value;
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tbody.appendChild(tr);
+        }
+        document.getElementById('output').hidden = false;
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+      }
+    }
+
+    // ---- phi digits ---------------------------------------------------------
+
+    function showDigits(e) {
+      if (e) e.preventDefault();
+      try {
+        const places = parseInt(document.getElementById('places').value, 10);
+        const r = pyCall(`logic.phi_digits(${places})`);
+        const out = document.getElementById('digits-out');
+        out.textContent = r.digits;
+        out.hidden = false;
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        alert(msg);
+      }
+    }
+
+    // ---- fibonacci convergence ---------------------------------------------
+
+    function renderFibonacci() {
+      const rows = pyCall('logic.fibonacci_ratios(14)');
+      const tbody = document.getElementById('fib-rows');
+      tbody.innerHTML = '';
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const c1 = document.createElement('td');
+        c1.textContent = `${r.b} / ${r.a}`;
+        const c2 = document.createElement('td');
+        c2.style.fontVariantNumeric = 'tabular-nums';
+        c2.textContent = r.ratio.toFixed(8);
+        const c3 = document.createElement('td');
+        c3.style.fontVariantNumeric = 'tabular-nums';
+        c3.textContent = (r.error >= 0 ? '+' : '−') + Math.abs(r.error).toExponential(2);
+        tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3);
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById('mode').addEventListener('change', updateMode);
+    document.getElementById('form').addEventListener('submit', calculate);
+    document.getElementById('digits-form').addEventListener('submit', showDigits);
+    document.querySelectorAll('.chip[data-places]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.getElementById('places').value = chip.dataset.places;
+        showDigits();
+      });
+    });
+    updateMode();
+    init();
+  </script>
+</body>
+</html>

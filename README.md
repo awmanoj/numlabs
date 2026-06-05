@@ -46,6 +46,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Birth year fun facts](tools/birth-year-facts/) — what released and happened the year you were born, plus the age you turn this year, your generation, Chinese zodiac, leap year, and Roman numerals
 
 ### Maths
+- [Golden ratio calculator](tools/golden-ratio/) — phi partners of any number, golden-ratio checks, golden rectangles, the "is your body golden?" test, phi to 1000 decimals, and Fibonacci convergence on 1.618
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
 - [Quadratic equation solver](tools/quadratic-equation/) — roots (real or complex), discriminant, vertex, axis of symmetry, and factored form of ax²+bx+c=0
 - [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)
