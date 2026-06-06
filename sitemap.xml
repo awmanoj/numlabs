@@ -86,6 +86,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://1618.reg32.dev/tools/ohms-law/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://1618.reg32.dev/tools/unit-converter/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>

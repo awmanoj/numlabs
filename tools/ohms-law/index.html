@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ohm's Law Calculator — V, I, R, P from Any Two | 1618.dev</title>
+  <meta name="description" content="Free Ohm's law calculator. Enter any two of voltage, current, resistance and power and get the other two — V = IR, P = VI — with µ/m/k/M unit prefixes. Runs in your browser." />
+  <meta name="keywords" content="ohms law calculator, ohm's law calculator, voltage current resistance calculator, V=IR calculator, power calculator, watts calculator, P=VI, electrical power calculator, resistance calculator, current calculator, voltage calculator, ohms law wheel, volts amps ohms watts" />
+  <link rel="canonical" href="https://1618.dev/tools/ohms-law/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Ohm's Law Calculator — 1618.dev" />
+  <meta property="og:description" content="Enter any two of voltage, current, resistance and power and get the other two — V = IR, P = VI. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/ohms-law/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Ohm's Law Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Solve voltage, current, resistance and power from any two, with metric unit prefixes. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Ohm's Law Calculator",
+    "description": "Free Ohm's law calculator. Enter any two of voltage, current, resistance and power and get the other two, with metric unit prefixes.",
+    "url": "https://1618.dev/tools/ohms-law/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>ohm's law calculator</h2>
+      <p class="muted">Ohm's law ties voltage, current, resistance and power together by <em>V = I &times; R</em> and <em>P = V &times; I</em>. Fill in <strong>any two</strong> of the four fields &mdash; leave the other two blank &mdash; and the rest are solved for, shown in every unit.</p>
+
+      <form id="form" class="card">
+        <label id="field-voltage">
+          Voltage
+          <span class="inline">
+            <input type="number" id="voltage" value="12" placeholder="—" min="0" step="any" />
+            <select id="voltage-unit">
+              <option value="uV">µV</option>
+              <option value="mV">mV</option>
+              <option value="V" selected>V</option>
+              <option value="kV">kV</option>
+              <option value="MV">MV</option>
+            </select>
+          </span>
+        </label>
+
+        <label id="field-current">
+          Current
+          <span class="inline">
+            <input type="number" id="current" value="2" placeholder="—" min="0" step="any" />
+            <select id="current-unit">
+              <option value="uA">µA</option>
+              <option value="mA">mA</option>
+              <option value="A" selected>A</option>
+              <option value="kA">kA</option>
+            </select>
+          </span>
+        </label>
+
+        <label id="field-resistance">
+          Resistance
+          <span class="inline">
+            <input type="number" id="resistance" placeholder="—" min="0" step="any" />
+            <select id="resistance-unit">
+              <option value="mohm">mΩ</option>
+              <option value="ohm" selected>Ω</option>
+              <option value="kohm">kΩ</option>
+              <option value="Mohm">MΩ</option>
+              <option value="Gohm">GΩ</option>
+            </select>
+          </span>
+        </label>
+
+        <label id="field-power">
+          Power
+          <span class="inline">
+            <input type="number" id="power" placeholder="—" min="0" step="any" />
+            <select id="power-unit">
+              <option value="uW">µW</option>
+              <option value="mW">mW</option>
+              <option value="W" selected>W</option>
+              <option value="kW">kW</option>
+              <option value="MW">MW</option>
+            </select>
+          </span>
+        </label>
+
+        <p class="muted" id="hint" style="margin:0">Enter exactly two values.</p>
+        <button type="submit" id="go" disabled>Loading Python&hellip;</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>Quantity</th><th style="text-align:right">Value</th><th></th></tr>
+            </thead>
+            <tbody id="r-summary"></tbody>
+          </table>
+          <p class="muted" id="r-formulas" style="margin-top:0.8rem"></p>
+        </div>
+        <div id="r-breakdowns"></div>
+      </div>
+
+      <h3>Formulas</h3>
+      <div class="formula">V = I &times; R</div>
+      <div class="formula" style="margin-top:0.4rem">P = V &times; I = I&sup2; &times; R = V&sup2; &divide; R</div>
+      <p class="muted" style="margin-top:0.6rem">
+        These four &mdash; voltage <em>V</em> (volts), current <em>I</em> (amps),
+        resistance <em>R</em> (ohms) and power <em>P</em> (watts) &mdash; are the
+        corners of the &ldquo;Ohm's law wheel&rdquo;. Any two of them fix the
+        other two, so there are six pairs you can start from; this calculator
+        picks the right formula for whichever two you fill in.
+      </p>
+      <p class="muted" style="margin-top:0.4rem">
+        Every value is converted through SI base units (volt, ampere, ohm, watt),
+        so you can mix prefixes freely &mdash; e.g. 5&nbsp;V across 220&nbsp;Ω, or
+        1&nbsp;kV at 1&nbsp;mA. The answer is then expressed in every prefix of
+        that quantity (µ, m, base, k, M, and GΩ) so you can read off whichever you
+        need. Ohm's law applies to <strong>ohmic</strong> DC circuits; for AC,
+        reactive or non-linear parts (diodes, motors) it's only an approximation.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../speed-distance-time/">Speed / distance / time calculator</a>
+        <a href="../ph-acid-base/">pH / acid-base calculator</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">ohms law calculator</span>
+        <span class="kw">voltage current resistance</span>
+        <span class="kw">V=IR calculator</span>
+        <span class="kw">power calculator</span>
+        <span class="kw">watts calculator</span>
+        <span class="kw">P=VI</span>
+        <span class="kw">resistance calculator</span>
+        <span class="kw">current calculator</span>
+        <span class="kw">voltage calculator</span>
+        <span class="kw">ohms law wheel</span>
+        <span class="kw">volts amps ohms watts</span>
+        <span class="kw">electrical power formula</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+      calculate();
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    const FIELDS = ['voltage', 'current', 'resistance', 'power'];
+
+    function fmt(x) {
+      if (!Number.isFinite(x)) return '—';
+      const a = Math.abs(x);
+      if (a !== 0 && (a < 1e-3 || a >= 1e7)) return x.toExponential(4);
+      return parseFloat(x.toFixed(6)).toLocaleString(undefined, { maximumFractionDigits: 4 });
+    }
+
+    function filled() {
+      // Return the field ids whose input holds a finite number.
+      return FIELDS.filter(f => {
+        const raw = document.getElementById(f).value.trim();
+        return raw !== '' && Number.isFinite(parseFloat(raw));
+      });
+    }
+
+    function calculate(e) {
+      if (e) e.preventDefault();
+      const hint = document.getElementById('hint');
+      const have = filled();
+
+      if (have.length !== 2) {
+        document.getElementById('output').hidden = true;
+        hint.textContent = have.length < 2
+          ? `Enter ${2 - have.length} more value${have.length === 1 ? '' : 's'}.`
+          : 'Too many values — leave exactly two blank.';
+        return;
+      }
+
+      try {
+        const [a, b] = have;
+        const expr = `logic.solve(`
+          + `${JSON.stringify(a)}, ${parseFloat(document.getElementById(a).value)}, ${JSON.stringify(document.getElementById(a + '-unit').value)}, `
+          + `${JSON.stringify(b)}, ${parseFloat(document.getElementById(b).value)}, ${JSON.stringify(document.getElementById(b + '-unit').value)})`;
+        const r = pyCall(expr);
+
+        // Summary table — base SI value for all four, badged given / solved.
+        const summary = document.getElementById('r-summary');
+        summary.innerHTML = '';
+        const baseLabel = { voltage: 'V', current: 'A', resistance: 'Ω', power: 'W' };
+        for (const q of r.quantities) {
+          const tr = document.createElement('tr');
+          const td1 = document.createElement('td');
+          td1.textContent = q.name;
+          const td2 = document.createElement('td');
+          td2.style.textAlign = 'right';
+          td2.style.fontVariantNumeric = 'tabular-nums';
+          td2.textContent = `${fmt(q.base)} ${baseLabel[q.key]}`;
+          const td3 = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = 'kw';
+          badge.textContent = q.given ? 'given' : 'solved';
+          if (!q.given) badge.style.fontWeight = '600';
+          td3.appendChild(badge);
+          tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+          summary.appendChild(tr);
+        }
+
+        document.getElementById('r-formulas').textContent = 'Used: ' + r.formulas.join('  •  ');
+
+        // Full unit breakdown for the two solved quantities.
+        const wrap = document.getElementById('r-breakdowns');
+        wrap.innerHTML = '';
+        for (const q of r.quantities) {
+          if (q.given) continue;
+          const card = document.createElement('div');
+          card.className = 'card';
+          const h = document.createElement('div');
+          h.className = 'result';
+          h.innerHTML = `<span class="label">${q.name}</span><span>${fmt(q.base)} ${baseLabel[q.key]}</span>`;
+          card.appendChild(h);
+          const table = document.createElement('table');
+          table.style.marginTop = '1rem';
+          const tbody = document.createElement('tbody');
+          for (const row of q.breakdown) {
+            const tr = document.createElement('tr');
+            const c1 = document.createElement('td');
+            c1.textContent = row.label;
+            const c2 = document.createElement('td');
+            c2.style.textAlign = 'right';
+            c2.style.fontVariantNumeric = 'tabular-nums';
+            c2.textContent = fmt(row.value);
+            tr.appendChild(c1); tr.appendChild(c2);
+            tbody.appendChild(tr);
+          }
+          table.appendChild(tbody);
+          card.appendChild(table);
+          wrap.appendChild(card);
+        }
+
+        hint.textContent = 'Two values entered — change any field to recompute.';
+        document.getElementById('output').hidden = false;
+      } catch (err) {
+        document.getElementById('output').hidden = true;
+        const msg = (err && err.message ? err.message : String(err)).split('\n').pop();
+        hint.textContent = msg;
+      }
+    }
+
+    for (const f of FIELDS) {
+      document.getElementById(f).addEventListener('input', calculate);
+      document.getElementById(f + '-unit').addEventListener('change', calculate);
+    }
+    document.getElementById('form').addEventListener('submit', calculate);
+    init();
+  </script>
+</body>
+</html>
