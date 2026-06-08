@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pomodoro Timer — Focus Timer with a Soothing Chime | 1618.dev</title>
+  <meta name="description" content="A free online Pomodoro timer with customizable focus and break lengths and a gentle, soothing chime at the end of each session. Stays accurate in the background and runs entirely in your browser." />
+  <meta name="keywords" content="pomodoro timer, focus timer, productivity timer, online pomodoro, study timer, 25 minute timer, work timer, break timer, pomodoro technique, tomato timer, soothing alarm, time management" />
+  <link rel="canonical" href="https://1618.dev/tools/pomodoro-timer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pomodoro Timer — Focus Timer with a Soothing Chime | 1618.dev" />
+  <meta property="og:description" content="Customizable Pomodoro focus timer with a gentle chime at the end of every session. Free, runs entirely in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/pomodoro-timer/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Pomodoro Timer — 1618.dev" />
+  <meta name="twitter:description" content="Customizable Pomodoro focus timer with a soothing chime at the end of every session. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Pomodoro Timer",
+    "description": "A free online Pomodoro timer with customizable focus and break lengths and a gentle, soothing chime at the end of each session. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/pomodoro-timer/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* The timer is the hero: a large monospaced readout that changes tone with
+       the current phase. Phase accent colours are kept soft to stay soothing. */
+    .timer-card {
+      text-align: center;
+      padding: 2rem 1.5rem 1.75rem;
+      transition: border-color 0.4s ease;
+    }
+    .timer-card[data-phase="work"] { border-color: var(--accent); }
+    .timer-card[data-phase="short_break"] { border-color: #4a9d9c; }
+    .timer-card[data-phase="long_break"] { border-color: #5a8dd6; }
+
+    .phase-name {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 0 0 0.25rem;
+    }
+    .timer-card[data-phase="work"] .phase-name { color: var(--accent); }
+    .timer-card[data-phase="short_break"] .phase-name { color: #4a9d9c; }
+    .timer-card[data-phase="long_break"] .phase-name { color: #5a8dd6; }
+
+    .time {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(3.5rem, 18vw, 6rem);
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      margin: 0.25rem 0 0.5rem;
+    }
+
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 0.25rem 0 1.25rem;
+    }
+    .dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      background: transparent;
+    }
+    .dot.filled { background: var(--accent); }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+    .controls button { justify-self: center; }
+    button.big { padding: 0.7rem 1.8rem; font-size: 1.05rem; }
+
+    .settings {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+      gap: 1rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .toggle-row label {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--fg);
+    }
+    .toggle-row input[type="checkbox"] { width: auto; }
+
+    .plan {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.5rem;
+      margin: 0.5rem 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .plan b { color: var(--fg); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Pomodoro timer</h2>
+      <p class="muted">Work in focused sprints separated by short breaks, with a longer break after every few rounds. A gentle chime sounds when each session ends, so you can look away from the clock. The countdown keeps accurate time even in a background tab, and everything runs in your browser.</p>
+
+      <div class="card timer-card" id="timer-card" data-phase="work">
+        <p class="phase-name" id="phase-name">Focus</p>
+        <div class="time" id="time">25:00</div>
+        <div class="dots" id="dots"></div>
+        <div class="controls">
+          <button id="start" class="big">Start</button>
+          <button id="reset" class="secondary">Reset</button>
+          <button id="skip" class="secondary">Skip</button>
+        </div>
+      </div>
+
+      <form id="form" class="card">
+        <div class="settings">
+          <label>
+            Focus (min)
+            <input type="number" id="work" value="25" min="1" max="180" step="1" />
+          </label>
+          <label>
+            Short break (min)
+            <input type="number" id="short_break" value="5" min="1" max="180" step="1" />
+          </label>
+          <label>
+            Long break (min)
+            <input type="number" id="long_break" value="15" min="1" max="180" step="1" />
+          </label>
+          <label>
+            Rounds / long break
+            <input type="number" id="rounds" value="4" min="1" max="12" step="1" />
+          </label>
+        </div>
+        <div class="toggle-row">
+          <label>
+            <input type="checkbox" id="sound" checked />
+            Chime at the end of each session
+          </label>
+          <button type="button" id="test-sound" class="chip">Test chime</button>
+        </div>
+        <div class="plan" id="plan"></div>
+      </form>
+
+      <h3>What this does</h3>
+      <p class="muted">
+        The Pomodoro Technique splits work into fixed sprints — classically 25
+        minutes — each followed by a 5-minute break, with a longer 15-minute
+        break after every fourth sprint. The fixed length is the point: it's
+        short enough to start without dread and long enough to make progress,
+        and the breaks keep you fresh. Adjust the focus, break, and round
+        lengths above to fit your own rhythm.
+      </p>
+      <p class="muted">
+        The end-of-session sound is a soft, bell-like chime built with the Web
+        Audio API — no jarring alarm, so it nudges rather than startles. A
+        rising tone marks the end of a break (back to work); a gentler falling
+        tone marks the end of a focus sprint (time to rest). The timer counts
+        down against the real clock, so leaving the tab in the background or
+        locking the screen won't make it drift.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../reading-time/">Reading time estimator</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">pomodoro timer</span>
+        <span class="kw">focus timer</span>
+        <span class="kw">productivity timer</span>
+        <span class="kw">online pomodoro</span>
+        <span class="kw">study timer</span>
+        <span class="kw">25 minute timer</span>
+        <span class="kw">work timer</span>
+        <span class="kw">break timer</span>
+        <span class="kw">pomodoro technique</span>
+        <span class="kw">tomato timer</span>
+        <span class="kw">soothing alarm</span>
+        <span class="kw">time management</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    // ---- Timer state -------------------------------------------------------
+    // The countdown is driven off a wall-clock deadline (endAt) rather than by
+    // decrementing a counter, so a throttled background tab doesn't lose time.
+    const state = {
+      phase: 'work',
+      completedWork: 0,
+      round: 1,
+      rounds: 4,
+      remaining: 25 * 60, // seconds left in the current phase
+      running: false,
+      endAt: 0,           // performance-clock ms when the phase ends
+    };
+    let ticker = null;
+    let audioCtx = null;
+
+    function config() {
+      pyodide.globals.set('work', parseInt(document.getElementById('work').value, 10));
+      pyodide.globals.set('short_break', parseInt(document.getElementById('short_break').value, 10));
+      pyodide.globals.set('long_break', parseInt(document.getElementById('long_break').value, 10));
+      pyodide.globals.set('rounds', parseInt(document.getElementById('rounds').value, 10));
+      const proxy = pyodide.runPython('logic.normalize_config(work, short_break, long_break, rounds)');
+      const cfg = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return cfg;
+    }
+
+    function fmt(seconds) {
+      pyodide.globals.set('secs', seconds);
+      return pyodide.runPython('logic.format_time(secs)');
+    }
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      state.rounds = config().rounds;
+      resetPhase('work', 0, 1);
+      renderPlan();
+    }
+
+    // ---- Phase handling ----------------------------------------------------
+    function resetPhase(phase, completedWork, round) {
+      const cfg = config();
+      state.phase = phase;
+      state.completedWork = completedWork;
+      state.round = round;
+      state.rounds = cfg.rounds;
+      pyodide.globals.set('phase', phase);
+      state.remaining = pyodide.runPython('logic.duration_seconds(phase, ' +
+        'logic.normalize_config(work, short_break, long_break, rounds))');
+      render();
+    }
+
+    // Move to whatever phase comes after the current one (used by both the
+    // natural end of a phase and the Skip button).
+    function advance() {
+      const cfg = config();
+      pyodide.globals.set('phase', state.phase);
+      pyodide.globals.set('done', state.completedWork);
+      const proxy = pyodide.runPython(
+        'logic.next_state(phase, done, ' +
+        'logic.normalize_config(work, short_break, long_break, rounds))');
+      const ns = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      state.phase = ns.phase;
+      state.completedWork = ns.completed_work;
+      state.round = ns.round;
+      state.rounds = ns.rounds;
+      state.remaining = ns.duration_seconds;
+      return ns;
+    }
+
+    // ---- The clock ---------------------------------------------------------
+    function start() {
+      if (state.running) { pause(); return; }
+      ensureAudio();
+      state.running = true;
+      state.endAt = performance.now() + state.remaining * 1000;
+      ticker = setInterval(tick, 250);
+      render();
+    }
+
+    function pause() {
+      if (!state.running) return;
+      state.remaining = Math.max(0, (state.endAt - performance.now()) / 1000);
+      state.running = false;
+      clearInterval(ticker);
+      ticker = null;
+      render();
+    }
+
+    function tick() {
+      const left = (state.endAt - performance.now()) / 1000;
+      if (left <= 0) {
+        const ended = state.phase;
+        advance();                 // sets the next phase + its duration
+        chime(ended);              // soothing sound for the phase that ended
+        state.endAt = performance.now() + state.remaining * 1000;
+        render();
+        return;
+      }
+      state.remaining = left;
+      render();
+    }
+
+    function reset() {
+      pause();
+      state.completedWork = 0;
+      resetPhase('work', 0, 1);
+    }
+
+    function skip() {
+      const wasRunning = state.running;
+      if (wasRunning) { clearInterval(ticker); ticker = null; }
+      advance();
+      if (wasRunning) {
+        state.endAt = performance.now() + state.remaining * 1000;
+        ticker = setInterval(tick, 250);
+      }
+      render();
+    }
+
+    // ---- Soothing chime (Web Audio, generated — no audio file) -------------
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // Play one soft bell note: a sine with a couple of quiet harmonics and a
+    // long, gentle decay — the kind of tone that calms rather than alarms.
+    function bell(freq, startAt, dur, gain) {
+      const ctx = audioCtx;
+      const out = ctx.createGain();
+      out.gain.setValueAtTime(0.0001, startAt);
+      out.gain.exponentialRampToValueAtTime(gain, startAt + 0.04);
+      out.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
+      out.connect(ctx.destination);
+
+      [[1, 1], [2, 0.28], [3, 0.12]].forEach(([mult, amp]) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq * mult;
+        const g = ctx.createGain();
+        g.gain.value = amp;
+        osc.connect(g).connect(out);
+        osc.start(startAt);
+        osc.stop(startAt + dur + 0.05);
+      });
+    }
+
+    // A short, warm arpeggio. Falling for the end of focus (wind down to rest),
+    // rising for the end of a break (lift back into work).
+    function chime(endedPhase) {
+      if (!document.getElementById('sound').checked) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const t = audioCtx.currentTime + 0.02;
+      // A major triad + octave, in Hz (C5, E5, G5, C6).
+      const up = [523.25, 659.25, 783.99, 1046.5];
+      const notes = endedPhase === 'work' ? [...up].reverse() : up;
+      notes.forEach((f, i) => bell(f, t + i * 0.18, 1.6, 0.22));
+    }
+
+    // ---- Rendering ---------------------------------------------------------
+    function renderDots() {
+      // Fill one dot per focus sprint completed in the current cycle. On a long
+      // break every dot is lit (the cycle just finished); otherwise it's the
+      // completed count modulo the round size.
+      const inCycle = state.completedWork % state.rounds;
+      const filled = (state.phase === 'long_break' && state.completedWork > 0)
+        ? state.rounds
+        : inCycle;
+      const dots = document.getElementById('dots');
+      dots.innerHTML = '';
+      for (let i = 0; i < state.rounds; i++) {
+        const d = document.createElement('span');
+        d.className = 'dot' + (i < filled ? ' filled' : '');
+        dots.appendChild(d);
+      }
+    }
+
+    function render() {
+      const label = pyodide.runPython('logic.phase_label("' + state.phase + '")');
+      document.getElementById('time').textContent = fmt(state.remaining);
+      document.getElementById('phase-name').textContent = label;
+      document.getElementById('timer-card').dataset.phase = state.phase;
+      document.getElementById('start').textContent = state.running ? 'Pause' : 'Start';
+      renderDots();
+      const mmss = fmt(state.remaining);
+      document.title = state.running
+        ? `${mmss} · ${label} — Pomodoro · 1618.dev`
+        : 'Pomodoro Timer — Focus Timer with a Soothing Chime | 1618.dev';
+    }
+
+    function renderPlan() {
+      const proxy = pyodide.runPython(
+        'logic.cycle_plan(logic.normalize_config(work, short_break, long_break, rounds))');
+      const plan = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      document.getElementById('plan').innerHTML =
+        `<span><b>${plan.focus_minutes}</b> min focus</span>` +
+        `<span><b>${plan.break_minutes}</b> min breaks</span>` +
+        `<span><b>${plan.total_minutes}</b> min per full cycle</span>`;
+    }
+
+    function onSettingsChange() {
+      config(); // pushes the latest values into pyodide globals
+      renderPlan();
+      // Re-arm the current phase length only when idle, so we don't disrupt a
+      // running countdown.
+      if (!state.running) {
+        resetPhase(state.phase, state.completedWork, state.round);
+      } else {
+        state.rounds = config().rounds;
+        renderDots();
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('start').addEventListener('click', start);
+    document.getElementById('reset').addEventListener('click', reset);
+    document.getElementById('skip').addEventListener('click', skip);
+    document.getElementById('test-sound').addEventListener('click', () => { ensureAudio(); chime('short_break'); });
+    ['work', 'short_break', 'long_break', 'rounds'].forEach((id) =>
+      document.getElementById(id).addEventListener('input', onSettingsChange));
+    init();
+  </script>
+</body>
+</html>
