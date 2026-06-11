@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mandelbrot Set Explorer — Zoom, Iterate &amp; Inspect | 1618.dev</title>
+  <meta name="description" content="Interactive Mandelbrot set explorer. Drag to pan, scroll to zoom into the fractal, tune the iteration count and colours, and click any point to see its orbit and escape count." />
+  <meta name="keywords" content="mandelbrot set, mandelbrot explorer, mandelbrot zoom, fractal generator, escape time algorithm, z squared plus c, julia set, complex numbers fractal, mandelbrot iterations, fractal viewer, mandelbrot online, interactive fractal" />
+  <link rel="canonical" href="https://1618.dev/tools/mandelbrot/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Mandelbrot Set Explorer — 1618.dev" />
+  <meta property="og:description" content="Drag, zoom and iterate into the Mandelbrot set. Tune colours and iteration depth, jump to famous spots, and click any point to read its orbit and escape count." />
+  <meta property="og:url" content="https://1618.dev/tools/mandelbrot/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Mandelbrot Set Explorer — 1618.dev" />
+  <meta name="twitter:description" content="Drag to pan, scroll to zoom, and click any point to inspect its orbit. An interactive Mandelbrot fractal in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Mandelbrot Set Explorer",
+    "description": "Interactive Mandelbrot set explorer. Drag to pan, scroll to zoom, tune iterations and colours, and click any point to inspect its orbit and escape count.",
+    "url": "https://1618.dev/tools/mandelbrot/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Mandelbrot Set Explorer</h2>
+      <p class="muted">
+        The Mandelbrot set is the picture you get by asking, for every point
+        <em>c</em> on the complex plane, one question: if you start at zero and
+        keep applying <code>z &rarr; z&sup2; + c</code>, does the number stay
+        bounded forever (black, in the set) or does it fly off to infinity
+        (coloured by how fast it left)? That one rule draws an endlessly
+        detailed boundary. <strong>Drag</strong> to pan, <strong>scroll</strong>
+        to zoom, and <strong>click</strong> any point to inspect its orbit.
+      </p>
+
+      <div class="fractal-bar" id="bar">
+        <span>centre <b id="b-center">—</b></span>
+        <span>span <b id="b-span">—</b></span>
+        <span>zoom <b id="b-zoom">—</b></span>
+        <span class="busy" id="b-busy" hidden>rendering…</span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas class="base" id="canvas"></canvas>
+        <canvas class="overlay" id="overlay"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:-0.25rem">
+        Scroll to zoom toward the cursor · drag to pan · double-click to zoom in ·
+        single-click to inspect a point. On a touch screen, tap to inspect and
+        pinch-free zoom with the buttons below.
+      </p>
+
+      <div class="chips" id="places" style="margin-top:0.75rem">
+        <button type="button" class="chip" data-place="home">Whole set</button>
+        <button type="button" class="chip" data-place="seahorse">Seahorse Valley</button>
+        <button type="button" class="chip" data-place="elephant">Elephant Valley</button>
+        <button type="button" class="chip" data-place="triple">Triple Spiral</button>
+        <button type="button" class="chip" data-place="mini">Mini-Mandelbrot</button>
+        <button type="button" class="chip" data-place="tendril">Tendrils</button>
+      </div>
+
+      <form class="card" id="controls" style="margin-top:1rem">
+        <div class="controls-grid">
+          <label>
+            Max iterations — <b id="iter-val">200</b>
+            <input type="range" id="iter" min="50" max="1500" step="10" value="200" />
+          </label>
+          <label>
+            Colour palette
+            <select id="palette">
+              <option value="ember" selected>Ember</option>
+              <option value="ocean">Ocean</option>
+              <option value="aurora">Aurora</option>
+              <option value="gold">Gold &amp; ink</option>
+              <option value="grayscale">Grayscale</option>
+            </select>
+          </label>
+        </div>
+        <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="secondary" id="zoom-in">Zoom in</button>
+          <button type="button" class="secondary" id="zoom-out">Zoom out</button>
+          <button type="button" class="secondary" id="reset">Reset view</button>
+          <button type="button" class="secondary" id="save">Save PNG</button>
+        </div>
+      </form>
+
+      <div id="inspect" class="card" hidden>
+        <div class="result">
+          <span class="label">Point inspector</span>
+          <span id="i-coord" style="font-size:1.3rem">—</span>
+        </div>
+        <p class="muted" id="i-verdict" style="margin-top:0.5rem">—</p>
+        <table>
+          <tbody id="i-rows"></tbody>
+        </table>
+        <p class="muted" style="margin-top:0.6rem">
+          The dots on the picture trace the orbit
+          <code>0, c, c&sup2;+c, …</code> — where the sequence wanders for a
+          member, where it spirals out for an escapee.
+        </p>
+      </div>
+
+      <h3>What you are looking at</h3>
+      <p class="muted">
+        Take any complex number <em>c</em> = <em>x</em> + <em>iy</em> and run the
+        feedback loop <code>z<sub>0</sub> = 0</code>,
+        <code>z<sub>n+1</sub> = z<sub>n</sub>&sup2; + c</code>. Two things can
+        happen. Either the numbers stay corralled near the origin no matter how
+        long you iterate — then <em>c</em> belongs to the Mandelbrot set, and we
+        paint it black — or they eventually break free and race off to infinity,
+        and we colour <em>c</em> by <em>how many steps</em> that escape took. The
+        black body is the set itself; all the colour is the outside, banded by
+        escape speed.
+      </p>
+
+      <h3>The escape-time rule (and why 2 is magic)</h3>
+      <div class="formula">|z| &gt; 2 &nbsp;&rArr;&nbsp; the orbit will diverge — stop iterating</div>
+      <p class="muted" style="margin-top:0.6rem">
+        You never have to iterate to infinity. There is a clean theorem: once the
+        magnitude of <em>z</em> ever exceeds 2, the orbit is guaranteed to blow up,
+        so we can stop the moment <code>|z| &gt; 2</code> and record the step count.
+        Points that survive the whole iteration budget (the <em>max iterations</em>
+        slider) without crossing 2 are treated as being in the set. Raise the
+        budget and the boundary sharpens, especially deep in a zoom — at the cost
+        of more work per pixel.
+      </p>
+
+      <h3>Smooth colouring</h3>
+      <div class="formula">&mu; = n + 1 &minus; log<sub>2</sub>( log |z| )</div>
+      <p class="muted" style="margin-top:0.6rem">
+        The bare integer escape count produces ugly colour bands — every pixel that
+        escapes on step 37 gets exactly the same colour. The fractional
+        <em>normalised iteration count</em> &mu; above interpolates between steps
+        using how far past the bailout the orbit overshot, giving the silky,
+        band-free gradients you see. This page colours by &mu;, fed through a
+        cosine palette.
+      </p>
+
+      <h3>A boundary you can fall into forever</h3>
+      <p class="muted">
+        The Mandelbrot set is <strong>connected</strong> — one single piece, no
+        islands floating free (every tiny "mini-Mandelbrot" you find on a zoom is
+        tethered to the main body by filaments too thin to see). Its area is finite
+        but its boundary is infinitely long and has fractal dimension 2: keep
+        zooming and you keep finding new spirals, seahorse tails, and shrunken
+        copies of the whole set. The <em>Mini-Mandelbrot</em> and <em>Tendrils</em>
+        shortcuts above drop you straight into that endless detail.
+      </p>
+
+      <h3>The Mandelbrot–Julia connection</h3>
+      <p class="muted">
+        Each point <em>c</em> here is also the <em>recipe</em> for a whole other
+        fractal — its <strong>Julia set</strong>, the picture you get by fixing that
+        same <em>c</em> and iterating over every starting <em>z</em> instead. Pick a
+        <em>c</em> inside the Mandelbrot set and its Julia set is one connected blob;
+        pick one outside and the Julia set shatters into dust. In that sense the
+        Mandelbrot set is an index of all Julia sets at once. (A Julia explorer is
+        on the way as a sibling tool.)
+      </p>
+
+      <h3>How this page is built</h3>
+      <p class="muted">
+        The math lives in <code>logic.py</code> — the escape iteration, the
+        <code>|z| &gt; 2</code> bailout, the smooth-&mu; formula, and the quick
+        interior tests for the main cardioid and period-2 bulb. The full picture is
+        drawn in JavaScript on a canvas (hundreds of thousands of pixels per frame
+        is too much to push through Python), but the <em>same</em> Python is what the
+        point inspector calls, point by point, so the numbers under your cursor come
+        straight from the source of truth.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../golden-ratio/">Golden ratio calculator</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../quadratic-equation/">Quadratic equation solver</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">mandelbrot set</span>
+        <span class="kw">mandelbrot explorer</span>
+        <span class="kw">mandelbrot zoom</span>
+        <span class="kw">fractal generator</span>
+        <span class="kw">escape time algorithm</span>
+        <span class="kw">z squared plus c</span>
+        <span class="kw">julia set</span>
+        <span class="kw">complex numbers fractal</span>
+        <span class="kw">smooth coloring mandelbrot</span>
+        <span class="kw">mini mandelbrot</span>
+        <span class="kw">seahorse valley</span>
+        <span class="kw">interactive fractal</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- state --------------------------------------------------------------
+    let pyodide = null;
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const ctx = canvas.getContext('2d');
+    const octx = overlay.getContext('2d');
+    const stage = document.getElementById('stage');
+
+    let W = 0, H = 0;
+    // view: cx/cy = complex-plane centre, scale = complex units per pixel.
+    const view = { cx: -0.6, cy: 0, scale: 0.005 };
+    let maxIter = 200;
+    let paletteName = 'ember';
+    let renderTimer = null;
+    let lastInspect = null;   // {cr, ci} so we can redraw the marker on resize
+
+    const PLACES = {
+      home:     { cx: -0.6,      cy: 0.0,      span: 3.2,    iter: 200 },
+      seahorse: { cx: -0.745,    cy: 0.1130,   span: 0.05,   iter: 350 },
+      elephant: { cx: 0.300,     cy: 0.0250,   span: 0.10,   iter: 350 },
+      triple:   { cx: -0.0885,   cy: 0.6545,   span: 0.04,   iter: 450 },
+      mini:     { cx: -1.74980,  cy: 0.0,      span: 0.012,  iter: 600 },
+      tendril:  { cx: -0.74540,  cy: 0.11302,  span: 0.0060, iter: 700 },
+    };
+
+    // ---- colour palettes (Inigo Quilez cosine gradients) --------------------
+    // colour(t) = a + b * cos( 2pi * (c*t + d) ), per channel, t derived from mu.
+    const PALETTES = {
+      ember:     { a:[0.5,0.40,0.30], b:[0.5,0.45,0.35], c:[1,1,1], d:[0.00,0.10,0.20] },
+      ocean:     { a:[0.10,0.30,0.50], b:[0.30,0.40,0.50], c:[1,1,1], d:[0.55,0.62,0.70] },
+      aurora:    { a:[0.40,0.50,0.45], b:[0.45,0.45,0.45], c:[1,1,1], d:[0.30,0.55,0.10] },
+      gold:      { a:[0.50,0.45,0.30], b:[0.50,0.45,0.30], c:[1,1,1], d:[0.00,0.08,0.16] },
+      grayscale: { a:[0.5,0.5,0.5], b:[0.5,0.5,0.5], c:[1,1,1], d:[0,0,0] },
+    };
+
+    function paletteRGB(mu) {
+      // Frequency: scale mu so the gradient cycles a few times across the colour
+      // bands without strobing. sqrt keeps deep counts from flickering.
+      const p = PALETTES[paletteName];
+      const t = Math.sqrt(mu) * 0.15;
+      const TAU = Math.PI * 2;
+      const r = p.a[0] + p.b[0] * Math.cos(TAU * (p.c[0] * t + p.d[0]));
+      const g = p.a[1] + p.b[1] * Math.cos(TAU * (p.c[1] * t + p.d[1]));
+      const b = p.a[2] + p.b[2] * Math.cos(TAU * (p.c[2] * t + p.d[2]));
+      return [
+        Math.max(0, Math.min(255, r * 255)),
+        Math.max(0, Math.min(255, g * 255)),
+        Math.max(0, Math.min(255, b * 255)),
+      ];
+    }
+
+    // ---- the hot loop: escape iteration in JS (mirrors logic.escape) --------
+    function smoothEscape(cr, ci) {
+      // Quick interior tests — the big black regions, skipped without iterating.
+      const x = cr - 0.25, q = x * x + ci * ci;
+      if (q * (q + x) <= 0.25 * ci * ci) return -1;       // main cardioid
+      const dx = cr + 1.0;
+      if (dx * dx + ci * ci <= 0.0625) return -1;          // period-2 bulb
+
+      let zr = 0, zi = 0, n = 0;
+      while (n < maxIter) {
+        const zr2 = zr * zr, zi2 = zi * zi;
+        if (zr2 + zi2 > 4.0) break;
+        zi = 2 * zr * zi + ci;
+        zr = zr2 - zi2 + cr;
+        n++;
+      }
+      if (n >= maxIter) return -1;                         // stayed bounded
+      const absz = Math.sqrt(zr * zr + zi * zi);
+      return n + 1 - Math.log(Math.log(absz)) / Math.LN2;  // smooth mu
+    }
+
+    // ---- rendering ----------------------------------------------------------
+    function pixelToComplex(px, py) {
+      return {
+        cr: view.cx + (px - W / 2) * view.scale,
+        ci: view.cy - (py - H / 2) * view.scale,
+      };
+    }
+
+    function render(step) {
+      step = step || 1;
+      const img = ctx.createImageData(W, H);
+      const data = img.data;
+      const halfW = W / 2, halfH = H / 2;
+      for (let py = 0; py < H; py += step) {
+        const ci = view.cy - (py - halfH) * view.scale;
+        for (let px = 0; px < W; px += step) {
+          const cr = view.cx + (px - halfW) * view.scale;
+          const mu = smoothEscape(cr, ci);
+          let r, g, b;
+          if (mu < 0) { r = g = b = 0; }                    // in the set
+          else { const c = paletteRGB(mu); r = c[0]; g = c[1]; b = c[2]; }
+          // Fill the step×step block so previews stay fast.
+          const yEnd = Math.min(py + step, H), xEnd = Math.min(px + step, W);
+          for (let yy = py; yy < yEnd; yy++) {
+            let o = (yy * W + px) * 4;
+            for (let xx = px; xx < xEnd; xx++) {
+              data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
+              o += 4;
+            }
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      updateBar();
+    }
+
+    function renderFull() {
+      const busy = document.getElementById('b-busy');
+      busy.hidden = false;
+      // Yield once so the "rendering…" label paints before the blocking loop.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        render(1);
+        busy.hidden = true;
+        if (lastInspect) drawOrbit(lastInspect.cr, lastInspect.ci, lastInspect.orbit);
+      }));
+    }
+
+    function scheduleFull(previewStep) {
+      render(previewStep || 3);            // instant low-res preview
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(renderFull, 90);
+    }
+
+    // ---- info bar -----------------------------------------------------------
+    function coordDigits() {
+      return Math.max(3, Math.ceil(-Math.log10(view.scale)) + 2);
+    }
+    function updateBar() {
+      const d = coordDigits();
+      document.getElementById('b-center').textContent =
+        `${view.cx.toFixed(d)} ${view.cy < 0 ? '−' : '+'} ${Math.abs(view.cy).toFixed(d)}i`;
+      const span = view.scale * W;
+      document.getElementById('b-span').textContent =
+        span >= 0.01 ? span.toFixed(4) : span.toExponential(2);
+      document.getElementById('b-zoom').textContent =
+        (3.2 / span).toLocaleString(undefined, { maximumFractionDigits: 0 }) + '×';
+    }
+
+    // ---- point inspector (calls logic.py through Pyodide) -------------------
+    function inspect(px, py) {
+      if (!pyodide) return;
+      const { cr, ci } = pixelToComplex(px, py);
+      let res, orb;
+      try {
+        const proxy = pyodide.runPython(`logic.classify(${cr}, ${ci}, ${maxIter})`);
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+        const op = pyodide.runPython(`logic.orbit(${cr}, ${ci}, 28)`);
+        orb = op.toJs();
+        op.destroy();
+      } catch (e) { return; }
+
+      const card = document.getElementById('inspect');
+      const d = coordDigits();
+      document.getElementById('i-coord').innerHTML =
+        `c = ${cr.toFixed(d)} ${ci < 0 ? '−' : '+'} ${Math.abs(ci).toFixed(d)} i`;
+      document.getElementById('i-verdict').textContent = res.verdict;
+
+      const rows = [
+        ['In the set?', res.escaped ? 'no — escapes' : 'yes — bounded'],
+        ['Escape iterations', res.escaped ? `${res.iterations} / ${res.max_iter}` : `— (${res.max_iter} cap)`],
+        ['Smooth value μ', res.smooth == null ? '—' : res.smooth.toFixed(4)],
+        ['|z| at stop', res.abs_z.toExponential(3)],
+      ];
+      if (res.region) rows.push(['Region', res.region]);
+      const tbody = document.getElementById('i-rows');
+      tbody.innerHTML = '';
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.textContent = k;
+        const td2 = document.createElement('td');
+        td2.style.fontVariantNumeric = 'tabular-nums'; td2.textContent = v;
+        tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+      }
+      card.hidden = false;
+
+      lastInspect = { cr, ci, orbit: orb };
+      drawOrbit(cr, ci, orb);
+    }
+
+    function complexToPixel(cr, ci) {
+      return {
+        px: (cr - view.cx) / view.scale + W / 2,
+        py: H / 2 - (ci - view.cy) / view.scale,
+      };
+    }
+
+    function drawOrbit(cr, ci, orb) {
+      octx.clearRect(0, 0, W, H);
+      // orbit polyline
+      if (orb && orb.length > 1) {
+        octx.strokeStyle = 'rgba(255,255,255,0.7)';
+        octx.lineWidth = 1;
+        octx.beginPath();
+        orb.forEach(([zr, zi], i) => {
+          const { px, py } = complexToPixel(zr, zi);
+          i === 0 ? octx.moveTo(px, py) : octx.lineTo(px, py);
+        });
+        octx.stroke();
+        octx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (const [zr, zi] of orb) {
+          const { px, py } = complexToPixel(zr, zi);
+          octx.beginPath(); octx.arc(px, py, 2, 0, 7); octx.fill();
+        }
+      }
+      // c marker (a crosshair ring)
+      const m = complexToPixel(cr, ci);
+      octx.strokeStyle = '#ffffff';
+      octx.lineWidth = 1.5;
+      octx.beginPath(); octx.arc(m.px, m.py, 6, 0, 7); octx.stroke();
+      octx.beginPath();
+      octx.moveTo(m.px - 10, m.py); octx.lineTo(m.px + 10, m.py);
+      octx.moveTo(m.px, m.py - 10); octx.lineTo(m.px, m.py + 10);
+      octx.stroke();
+    }
+
+    function clearOverlay() {
+      octx.clearRect(0, 0, W, H);
+      lastInspect = null;
+    }
+
+    // ---- view changes -------------------------------------------------------
+    function goTo(p) {
+      view.cx = p.cx; view.cy = p.cy; view.scale = p.span / W;
+      maxIter = p.iter;
+      document.getElementById('iter').value = maxIter;
+      document.getElementById('iter-val').textContent = maxIter;
+      clearOverlay();
+      renderFull();
+    }
+
+    function zoomAt(px, py, factor) {
+      const newScale = view.scale * factor;
+      view.cx += (px - W / 2) * (view.scale - newScale);
+      view.cy -= (py - H / 2) * (view.scale - newScale);
+      view.scale = newScale;
+      clearOverlay();
+    }
+
+    // ---- canvas sizing ------------------------------------------------------
+    function sizeCanvas(keepView) {
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 0.68);
+      const span = view.scale * (W || cssW);   // remember current real-axis span
+      W = cssW; H = cssH;
+      canvas.width = W; canvas.height = H;
+      overlay.width = W; overlay.height = H;
+      if (keepView) view.scale = span / W;       // preserve the visible window
+      else view.scale = 3.2 / W;
+    }
+
+    // ---- events -------------------------------------------------------------
+    let drag = null;   // {x, y, moved}
+    stage.addEventListener('pointerdown', (e) => {
+      stage.setPointerCapture(e.pointerId);
+      drag = { x: e.offsetX, y: e.offsetY, sx: e.offsetX, sy: e.offsetY, moved: false };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
+      if (Math.abs(e.offsetX - drag.sx) + Math.abs(e.offsetY - drag.sy) > 4) {
+        drag.moved = true; stage.classList.add('grabbing');
+      }
+      if (!drag.moved) return;
+      view.cx -= dx * view.scale;
+      view.cy += dy * view.scale;
+      drag.x = e.offsetX; drag.y = e.offsetY;
+      clearOverlay();
+      render(3);                                  // live low-res while dragging
+    });
+    stage.addEventListener('pointerup', (e) => {
+      stage.classList.remove('grabbing');
+      if (drag && !drag.moved) inspect(e.offsetX, e.offsetY);
+      else if (drag && drag.moved) renderFull();
+      drag = null;
+    });
+    stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grabbing'); });
+
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 0.8 : 1.25;
+      zoomAt(e.offsetX, e.offsetY, factor);
+      scheduleFull(3);
+    }, { passive: false });
+
+    stage.addEventListener('dblclick', (e) => {
+      zoomAt(e.offsetX, e.offsetY, 0.5);
+      renderFull();
+    });
+
+    document.getElementById('iter').addEventListener('input', (e) => {
+      maxIter = parseInt(e.target.value, 10);
+      document.getElementById('iter-val').textContent = maxIter;
+      scheduleFull(3);
+    });
+    document.getElementById('palette').addEventListener('change', (e) => {
+      paletteName = e.target.value;
+      renderFull();
+    });
+    document.getElementById('zoom-in').addEventListener('click', () => { zoomAt(W / 2, H / 2, 0.6); renderFull(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { zoomAt(W / 2, H / 2, 1.6); renderFull(); });
+    document.getElementById('reset').addEventListener('click', () => goTo(PLACES.home));
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'mandelbrot.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+    document.querySelectorAll('.chip[data-place]').forEach((chip) => {
+      chip.addEventListener('click', () => goTo(PLACES[chip.dataset.place]));
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { sizeCanvas(true); renderFull(); }, 150);
+    });
+
+    // ---- boot ---------------------------------------------------------------
+    async function init() {
+      sizeCanvas(false);
+      goTo(PLACES.home);                  // first paint runs in pure JS, instantly
+      pyodide = await loadPyodide();      // load Python in the background for the inspector
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+    }
+    init();
+  </script>
+</body>
+</html>

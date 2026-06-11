@@ -240,3 +240,52 @@ footer a { color: var(--muted); }
   letter-spacing: 0.01em;
   user-select: text;
 }
+
+/* ---- Fractal explorers (Mandelbrot, Julia, …) -------------------------- */
+.fractal-stage {
+  position: relative;
+  width: 100%;
+  margin: 0.25rem 0 0.75rem;
+  cursor: crosshair;
+  touch-action: none;          /* we handle pan/zoom ourselves */
+}
+.fractal-stage.grabbing { cursor: grabbing; }
+.fractal-stage canvas {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+}
+.fractal-stage .base {
+  border: 1px solid var(--border);
+  background: #000;
+}
+.fractal-stage .overlay {       /* marker + orbit, drawn on top */
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fractal-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1rem;
+  align-items: baseline;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.5rem;
+}
+.fractal-bar b { color: var(--fg); font-weight: 600; }
+.fractal-bar .busy { color: var(--accent); }
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 520px) { .controls-grid { grid-template-columns: 1fr; } }
+
+input[type="range"] {
+  padding: 0;
+  accent-color: var(--accent);
+}

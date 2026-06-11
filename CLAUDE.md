@@ -103,6 +103,7 @@ existing tool, so just confirm it's present:
 
 ### Maths
 - `golden-ratio` — Golden Ratio Calculator (φ = (1+√5)/2). Four-mode calculator in one `_DISPATCH`-free set of functions: `counterpart(n)` (larger n·φ, smaller n/φ, golden cut of n into long/short parts summing to n), `compare(a,b)` (larger/smaller ratio vs φ, percent error + closeness verdict), `rectangle(width)` (both golden orientations — portrait width·φ and landscape width/φ — each with area + diagonal), `body_check(height, navel)` (height/navel vs φ, navel height for an exact φ). Plus `fibonacci_ratios(k)` (successive F(n+1)/F(n) converging on φ, signed error) and `phi_digits(places)` (φ to ≤2000 dp, exact via `math.isqrt`, truncated not rounded). Static sections: inline-SVG golden spiral (nested golden rectangles + connected quarter-circle arcs), φ-in-nature notes (with a skeptic caveat), face/body "divine proportion" explainer. Live Fibonacci table + decimal-place chips; verdict bands at 0.5/2/5% error
+- `mandelbrot` — Mandelbrot Set Explorer (first of a planned fractal series). Interactive escape-time fractal on a `<canvas>`. **Math/render split** (per the user's call): `logic.py` is the source of truth — `escape(cx,cy,max_iter,bailout)` returns escaped/iterations/smooth-μ/final-z, `escape_count`, `orbit` (first N z-values, stops past bailout), `in_main_cardioid`/`in_period2_bulb` interior tests, `classify` (friendly verdict + region) — with a `__main__` that sanity-checks and prints an ASCII portrait. The hot pixel loop is **reimplemented in JS** (`smoothEscape`) because pushing 300k px/frame through Pyodide is too slow; Pyodide loads in the background and is called **only** for the point inspector so logic.py is genuinely used in-browser. UI: drag-pan / wheel-zoom-toward-cursor / dblclick-zoom / single-click-inspect via Pointer events; low-res preview (step=3) during interaction + debounced full render; smooth-μ colouring through IQ cosine palettes (5 presets); famous-location chips (Seahorse/Elephant Valley, Triple Spiral, Mini-Mandelbrot, Tendrils) that also set max-iter; iteration slider, Save-PNG, info bar (centre/span/zoom×); overlay `<canvas>` draws the c-marker + orbit polyline. Planned siblings: Julia set, Newton fractal, Barnsley fern, Sierpinski triangle, Koch snowflake.
 - `prime-factorization` — Prime Factorization (factors, all divisors, divisor count + sum)
 - `quadratic-equation` — Quadratic Equation Solver (roots real/complex, discriminant, vertex, axis of symmetry, Vieta sum/product, rational factored form)
 - `roman-numeral` — Roman Numeral Converter (number ↔ Roman, 1–3999)
@@ -120,4 +121,17 @@ existing tool, so just confirm it's present:
 
 ## Backlog
 
-_(empty — ask the user what to build next)_
+**Fractal series (Maths)** — agreed lineup, build one at a time, not in bulk.
+Mandelbrot shipped; remaining, roughly in order:
+- `julia` — Julia set explorer (fix c, iterate over the plane; the payoff is
+  dragging c around to morph the shape — pairs with `mandelbrot`)
+- `newton-fractal` — Newton's method basins of attraction (root-finding, colour
+  each point by which root it converges to)
+- `barnsley-fern` — IFS / chaos game; tweak the four affine maps + probabilities
+- `sierpinski-triangle` — chaos game vs. recursive subdivision (two routes, one
+  fractal)
+- `koch-snowflake` — recursive edge replacement / L-system; infinite perimeter,
+  finite area
+
+Same math/render split as `mandelbrot`: logic.py owns the real math + a `__main__`
+sanity check, JS owns the hot render loop.
