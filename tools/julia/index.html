@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Julia Set Explorer — Drag c Across the Mandelbrot Set | 1618.dev</title>
+  <meta name="description" content="Interactive Julia set explorer. Drag the parameter c across a mini Mandelbrot map and watch the fractal morph in real time, zoom in, tune iterations and colours, and inspect any point's orbit." />
+  <meta name="keywords" content="julia set, julia set explorer, julia fractal, mandelbrot julia, z squared plus c, douady rabbit, san marco fractal, dendrite julia, filled julia set, connected julia set, escape time fractal, interactive fractal" />
+  <link rel="canonical" href="https://1618.dev/tools/julia/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Julia Set Explorer — 1618.dev" />
+  <meta property="og:description" content="Drag the parameter c across a mini Mandelbrot map and watch the Julia fractal morph in real time. Zoom, recolour, and inspect any point's orbit." />
+  <meta property="og:url" content="https://1618.dev/tools/julia/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Julia Set Explorer — 1618.dev" />
+  <meta name="twitter:description" content="Drag c across the Mandelbrot set and watch the Julia fractal morph. Interactive, in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Julia Set Explorer",
+    "description": "Interactive Julia set explorer. Drag the parameter c across a mini Mandelbrot map and watch the fractal morph in real time, zoom, tune iterations and colours, and inspect any point's orbit.",
+    "url": "https://1618.dev/tools/julia/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Julia Set Explorer</h2>
+      <p class="muted">
+        A Julia set runs the very same loop as the
+        <a href="../mandelbrot/">Mandelbrot set</a> —
+        <code>z &rarr; z&sup2; + c</code> — but flips which knob you turn: instead
+        of starting at zero and sweeping <em>c</em>, you <strong>fix one
+        <em>c</em></strong> and sweep the starting point <em>z</em> over the whole
+        plane. Every point of the Mandelbrot set is the recipe for a different
+        Julia set. <strong>Drag the dot across the mini Mandelbrot map below</strong>
+        and watch this fractal morph.
+      </p>
+
+      <div class="fractal-bar" id="bar">
+        <span>c = <b id="b-c">—</b></span>
+        <span id="b-conn">—</span>
+        <span>zoom <b id="b-zoom">—</b></span>
+        <span class="busy" id="b-busy" hidden>rendering…</span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas class="base" id="canvas"></canvas>
+        <canvas class="overlay" id="overlay"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:-0.25rem">
+        On the Julia view: scroll to zoom · drag to pan · double-click to zoom in ·
+        single-click to inspect a point's orbit.
+      </p>
+
+      <div class="card" style="margin-top:1rem">
+        <label style="margin-bottom:0.5rem">Choose c — drag across the Mandelbrot set</label>
+        <div class="picker-wrap" style="max-width:340px">
+          <div class="fractal-stage" id="pstage" style="margin:0">
+            <canvas class="base" id="picker"></canvas>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:0.5rem;margin-bottom:0">
+          Inside the black body → a <b>connected</b> Julia set. Outside → it
+          shatters into <b>dust</b>. The boundary is where the most intricate
+          shapes live.
+        </p>
+        <div class="chips" id="famous" style="margin-top:0.75rem">
+          <button type="button" class="chip" data-c="-0.123,0.745">Douady rabbit</button>
+          <button type="button" class="chip" data-c="-0.75,0.0">San Marco</button>
+          <button type="button" class="chip" data-c="0.0,1.0">Dendrite</button>
+          <button type="button" class="chip" data-c="-0.391,-0.587">Siegel disk</button>
+          <button type="button" class="chip" data-c="-0.8,0.156">Spiral</button>
+          <button type="button" class="chip" data-c="-0.4,0.6">Dragon</button>
+        </div>
+      </div>
+
+      <form class="card" id="controls">
+        <div class="controls-grid">
+          <label>
+            Max iterations — <b id="iter-val">200</b>
+            <input type="range" id="iter" min="50" max="1500" step="10" value="200" />
+          </label>
+          <label>
+            Colour palette
+            <select id="palette">
+              <option value="ember" selected>Ember</option>
+              <option value="ocean">Ocean</option>
+              <option value="aurora">Aurora</option>
+              <option value="gold">Gold &amp; ink</option>
+              <option value="grayscale">Grayscale</option>
+            </select>
+          </label>
+        </div>
+        <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="secondary" id="random">Random c</button>
+          <button type="button" class="secondary" id="zoom-in">Zoom in</button>
+          <button type="button" class="secondary" id="zoom-out">Zoom out</button>
+          <button type="button" class="secondary" id="reset">Reset view</button>
+          <button type="button" class="secondary" id="save">Save PNG</button>
+        </div>
+      </form>
+
+      <div id="inspect" class="card" hidden>
+        <div class="result">
+          <span class="label">Point inspector</span>
+          <span id="i-coord" style="font-size:1.3rem">—</span>
+        </div>
+        <p class="muted" id="i-verdict" style="margin-top:0.5rem">—</p>
+        <table>
+          <tbody id="i-rows"></tbody>
+        </table>
+        <p class="muted" style="margin-top:0.6rem">
+          The dots trace this point's orbit under
+          <code>z &rarr; z&sup2; + c</code> for the current c — bounded for a
+          member of the filled set, spiralling out for an escapee.
+        </p>
+      </div>
+
+      <h3>What a Julia set is</h3>
+      <p class="muted">
+        Fix a complex constant <em>c</em>. For every starting point
+        <em>z<sub>0</sub></em> on the plane, run <code>z<sub>n+1</sub> =
+        z<sub>n</sub>&sup2; + c</code>. Some starting points stay trapped near the
+        origin forever; others escape to infinity. The <strong>filled Julia
+        set</strong> is the trapped ones (painted black here); its frizzy outline
+        — the boundary between "stays" and "escapes" — is the <strong>Julia
+        set</strong> proper. Change <em>c</em> and you get a completely different
+        shape, which is why this tool is really an infinite family of fractals
+        behind one slider.
+      </p>
+
+      <h3>Julia and Mandelbrot are the same equation</h3>
+      <p class="muted">
+        The only difference between this page and the
+        <a href="../mandelbrot/">Mandelbrot explorer</a> is which value moves.
+        Mandelbrot fixes the start at <em>z = 0</em> and varies the parameter
+        <em>c</em>; Julia fixes <em>c</em> and varies the start <em>z</em>. That
+        makes the Mandelbrot set a <em>map of all Julia sets at once</em>: its
+        location tells you, at a glance, what the matching Julia set looks like —
+        which is exactly what the mini-map above is for.
+      </p>
+
+      <h3>Connected, or dust?</h3>
+      <p class="muted">
+        There is a clean either/or, the <strong>Fatou–Julia dichotomy</strong>:
+      </p>
+      <ul class="muted">
+        <li>If <em>c</em> is <strong>inside</strong> the Mandelbrot set, the Julia
+          set is <strong>connected</strong> — one unbroken piece (a rabbit, a
+          basilica, a spiral).</li>
+        <li>If <em>c</em> is <strong>outside</strong>, the Julia set is a
+          <strong>totally disconnected dust</strong> (a Cantor set) — infinitely
+          many specks, none touching.</li>
+      </ul>
+      <p class="muted">
+        Right on the Mandelbrot boundary you get the wildest, most delicate forms
+        — dendrites and near-dust filaments. The read-out above tells you which
+        side of the line your current <em>c</em> sits on.
+      </p>
+
+      <h3>The escape rule and smooth colouring</h3>
+      <div class="formula">|z| &gt; 2 &nbsp;&rArr;&nbsp; the orbit diverges — stop iterating</div>
+      <p class="muted" style="margin-top:0.6rem">
+        Same escape-time trick as before: once <code>|z|</code> passes 2 the orbit
+        is doomed to blow up, so we stop and record the step count. To avoid ugly
+        colour bands we use the fractional normalised count
+        <code>&mu; = n + 1 &minus; log<sub>2</sub>(log|z|)</code>, fed through a
+        cosine palette. Push the <em>max iterations</em> slider up to sharpen thin
+        filaments at deep zoom.
+      </p>
+
+      <h3>A few famous c values</h3>
+      <ul class="muted">
+        <li><strong>Douady rabbit</strong> (c = &minus;0.123 + 0.745i) — a connected
+          set of round lobes budding off each other like a rabbit's head and ears.</li>
+        <li><strong>San Marco</strong> (c = &minus;0.75) — endless arches reflected in
+          water, named for the basilica in Venice.</li>
+        <li><strong>Dendrite</strong> (c = i) — no interior at all; a branching,
+          tree-like filament sitting right on the boundary.</li>
+        <li><strong>Siegel disk</strong> (c = &minus;0.391 &minus; 0.587i) — built
+          around a region where the orbit rotates forever without settling.</li>
+      </ul>
+
+      <h3>How this page is built</h3>
+      <p class="muted">
+        The math lives in <code>logic.py</code> — the escape iteration, the
+        <code>|z| &gt; 2</code> bailout, the smooth-&mu; formula, and the
+        connectivity test (run the Mandelbrot iteration on <em>c</em> and see if it
+        stays bounded). The picture is drawn in JavaScript on a canvas for speed,
+        but the <em>same</em> Python backs the point inspector, so the orbit and
+        escape count under your cursor come straight from the source of truth.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../mandelbrot/">Mandelbrot set explorer</a>
+        <a href="../golden-ratio/">Golden ratio calculator</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">julia set</span>
+        <span class="kw">julia set explorer</span>
+        <span class="kw">julia fractal</span>
+        <span class="kw">mandelbrot julia connection</span>
+        <span class="kw">z squared plus c</span>
+        <span class="kw">douady rabbit</span>
+        <span class="kw">san marco fractal</span>
+        <span class="kw">dendrite julia set</span>
+        <span class="kw">filled julia set</span>
+        <span class="kw">connected julia set</span>
+        <span class="kw">fatou dust</span>
+        <span class="kw">interactive fractal</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- state --------------------------------------------------------------
+    let pyodide = null;
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const ctx = canvas.getContext('2d');
+    const octx = overlay.getContext('2d');
+    const stage = document.getElementById('stage');
+    const picker = document.getElementById('picker');
+    const pctx = picker.getContext('2d');
+    const pstage = document.getElementById('pstage');
+
+    let W = 0, H = 0;        // Julia canvas size
+    let PW = 0, PH = 0;      // picker canvas size
+    // view: z-plane centre + complex units per pixel for the Julia canvas.
+    const view = { cx: 0, cy: 0, scale: 0.0064 };
+    const c = { re: -0.123, im: 0.745 };     // the fixed parameter
+    let maxIter = 200;
+    let paletteName = 'ember';
+    let renderTimer = null;
+    let lastInspect = null;
+    let pickerBase = null;   // cached ImageData of the mini Mandelbrot map
+
+    // The picker shows a fixed view of the Mandelbrot (c-)plane.
+    const PVIEW = { cx: -0.65, cy: 0, span: 3.4 };
+
+    // ---- colour palettes (Inigo Quilez cosine gradients) --------------------
+    const PALETTES = {
+      ember:     { a:[0.5,0.40,0.30], b:[0.5,0.45,0.35], c:[1,1,1], d:[0.00,0.10,0.20] },
+      ocean:     { a:[0.10,0.30,0.50], b:[0.30,0.40,0.50], c:[1,1,1], d:[0.55,0.62,0.70] },
+      aurora:    { a:[0.40,0.50,0.45], b:[0.45,0.45,0.45], c:[1,1,1], d:[0.30,0.55,0.10] },
+      gold:      { a:[0.50,0.45,0.30], b:[0.50,0.45,0.30], c:[1,1,1], d:[0.00,0.08,0.16] },
+      grayscale: { a:[0.5,0.5,0.5], b:[0.5,0.5,0.5], c:[1,1,1], d:[0,0,0] },
+    };
+    function paletteRGB(mu) {
+      const p = PALETTES[paletteName];
+      const t = Math.sqrt(mu) * 0.15;
+      const TAU = Math.PI * 2;
+      const r = p.a[0] + p.b[0] * Math.cos(TAU * (p.c[0] * t + p.d[0]));
+      const g = p.a[1] + p.b[1] * Math.cos(TAU * (p.c[1] * t + p.d[1]));
+      const b = p.a[2] + p.b[2] * Math.cos(TAU * (p.c[2] * t + p.d[2]));
+      return [
+        Math.max(0, Math.min(255, r * 255)),
+        Math.max(0, Math.min(255, g * 255)),
+        Math.max(0, Math.min(255, b * 255)),
+      ];
+    }
+
+    // ---- hot loops in JS (mirror logic.escape) ------------------------------
+    function juliaSmoothEscape(zr, zi) {
+      const cr = c.re, ci = c.im;
+      let n = 0;
+      while (n < maxIter) {
+        const zr2 = zr * zr, zi2 = zi * zi;
+        if (zr2 + zi2 > 4.0) break;
+        zi = 2 * zr * zi + ci;
+        zr = zr2 - zi2 + cr;
+        n++;
+      }
+      if (n >= maxIter) return -1;
+      const absz = Math.sqrt(zr * zr + zi * zi);
+      return n + 1 - Math.log(Math.log(absz)) / Math.LN2;
+    }
+    function mandelEscapeCount(cr, ci, iter) {
+      // For the picker map and the connectivity badge: iterate from z = 0.
+      let zr = 0, zi = 0, n = 0;
+      while (n < iter) {
+        const zr2 = zr * zr, zi2 = zi * zi;
+        if (zr2 + zi2 > 4.0) break;
+        zi = 2 * zr * zi + ci;
+        zr = zr2 - zi2 + cr;
+        n++;
+      }
+      return n;
+    }
+
+    // ---- Julia rendering ----------------------------------------------------
+    function pixelToComplex(px, py) {
+      return {
+        cr: view.cx + (px - W / 2) * view.scale,
+        ci: view.cy - (py - H / 2) * view.scale,
+      };
+    }
+    function complexToPixel(zr, zi) {
+      return {
+        px: (zr - view.cx) / view.scale + W / 2,
+        py: H / 2 - (zi - view.cy) / view.scale,
+      };
+    }
+    function render(step) {
+      step = step || 1;
+      const img = ctx.createImageData(W, H);
+      const data = img.data;
+      const halfW = W / 2, halfH = H / 2;
+      for (let py = 0; py < H; py += step) {
+        const zi0 = view.cy - (py - halfH) * view.scale;
+        for (let px = 0; px < W; px += step) {
+          const zr0 = view.cx + (px - halfW) * view.scale;
+          const mu = juliaSmoothEscape(zr0, zi0);
+          let r, g, b;
+          if (mu < 0) { r = g = b = 0; }
+          else { const cc = paletteRGB(mu); r = cc[0]; g = cc[1]; b = cc[2]; }
+          const yEnd = Math.min(py + step, H), xEnd = Math.min(px + step, W);
+          for (let yy = py; yy < yEnd; yy++) {
+            let o = (yy * W + px) * 4;
+            for (let xx = px; xx < xEnd; xx++) {
+              data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
+              o += 4;
+            }
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      updateBar();
+    }
+    function renderFull() {
+      const busy = document.getElementById('b-busy');
+      busy.hidden = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        render(1);
+        busy.hidden = true;
+        if (lastInspect) drawOrbit(lastInspect.cr, lastInspect.ci, lastInspect.orbit);
+      }));
+    }
+    function scheduleFull(previewStep) {
+      render(previewStep || 3);
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(renderFull, 90);
+    }
+
+    // ---- info bar -----------------------------------------------------------
+    function coordDigits() {
+      return Math.max(3, Math.ceil(-Math.log10(view.scale)) + 2);
+    }
+    function fmtC() {
+      return `${c.re.toFixed(4)} ${c.im < 0 ? '−' : '+'} ${Math.abs(c.im).toFixed(4)} i`;
+    }
+    function updateBar() {
+      document.getElementById('b-c').textContent = fmtC();
+      const span = view.scale * W;
+      document.getElementById('b-zoom').textContent =
+        (3.2 / span).toLocaleString(undefined, { maximumFractionDigits: 0 }) + '×';
+      const connected = mandelEscapeCount(c.re, c.im, maxIter) >= maxIter;
+      const el = document.getElementById('b-conn');
+      el.innerHTML = connected
+        ? '<b style="color:var(--accent)">connected</b>'
+        : '<b>dust</b>';
+    }
+
+    // ---- picker (mini Mandelbrot map) ---------------------------------------
+    function renderPicker() {
+      const img = pctx.createImageData(PW, PH);
+      const data = img.data;
+      const scale = PVIEW.span / PW;
+      for (let py = 0; py < PH; py++) {
+        const ci = PVIEW.cy - (py - PH / 2) * scale;
+        for (let px = 0; px < PW; px++) {
+          const cr = PVIEW.cx + (px - PW / 2) * scale;
+          const n = mandelEscapeCount(cr, ci, 100);
+          let r, g, b;
+          if (n >= 100) { r = 22; g = 22; b = 30; }          // in set: near-black
+          else {
+            const t = n / 100;                                // muted blue ramp
+            r = 30 + t * 60; g = 50 + t * 110; b = 80 + t * 150;
+          }
+          const o = (py * PW + px) * 4;
+          data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
+        }
+      }
+      pickerBase = img;
+      drawPicker();
+    }
+    function pickerComplexToPixel(cr, ci) {
+      const scale = PVIEW.span / PW;
+      return {
+        px: (cr - PVIEW.cx) / scale + PW / 2,
+        py: PH / 2 - (ci - PVIEW.cy) / scale,
+      };
+    }
+    function pickerPixelToComplex(px, py) {
+      const scale = PVIEW.span / PW;
+      return {
+        cr: PVIEW.cx + (px - PW / 2) * scale,
+        ci: PVIEW.cy - (py - PH / 2) * scale,
+      };
+    }
+    function drawPicker() {
+      if (pickerBase) pctx.putImageData(pickerBase, 0, 0);
+      const m = pickerComplexToPixel(c.re, c.im);
+      pctx.strokeStyle = '#ffffff';
+      pctx.lineWidth = 2;
+      pctx.beginPath(); pctx.arc(m.px, m.py, 5, 0, 7); pctx.stroke();
+      pctx.fillStyle = '#d4af37';
+      pctx.beginPath(); pctx.arc(m.px, m.py, 2.5, 0, 7); pctx.fill();
+    }
+
+    // ---- point inspector (calls logic.py via Pyodide) -----------------------
+    function inspect(px, py) {
+      if (!pyodide) return;
+      const { cr, ci } = pixelToComplex(px, py);  // here cr,ci is the start z
+      let res, orb;
+      try {
+        const proxy = pyodide.runPython(`logic.classify(${cr}, ${ci}, ${c.re}, ${c.im}, ${maxIter})`);
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+        const op = pyodide.runPython(`logic.orbit(${cr}, ${ci}, ${c.re}, ${c.im}, 28)`);
+        orb = op.toJs();
+        op.destroy();
+      } catch (e) { return; }
+
+      const d = coordDigits();
+      document.getElementById('i-coord').innerHTML =
+        `z₀ = ${cr.toFixed(d)} ${ci < 0 ? '−' : '+'} ${Math.abs(ci).toFixed(d)} i`;
+      document.getElementById('i-verdict').textContent = res.verdict;
+      const rows = [
+        ['In the set?', res.escaped ? 'no — escapes' : 'yes — bounded'],
+        ['Escape iterations', res.escaped ? `${res.iterations} / ${res.max_iter}` : `— (${res.max_iter} cap)`],
+        ['Smooth value μ', res.smooth == null ? '—' : res.smooth.toFixed(4)],
+        ['|z| at stop', res.abs_z.toExponential(3)],
+      ];
+      const tbody = document.getElementById('i-rows');
+      tbody.innerHTML = '';
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.textContent = k;
+        const td2 = document.createElement('td');
+        td2.style.fontVariantNumeric = 'tabular-nums'; td2.textContent = v;
+        tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+      }
+      document.getElementById('inspect').hidden = false;
+      lastInspect = { cr, ci, orbit: orb };
+      drawOrbit(cr, ci, orb);
+    }
+    function drawOrbit(zr0, zi0, orb) {
+      octx.clearRect(0, 0, W, H);
+      if (orb && orb.length > 1) {
+        octx.strokeStyle = 'rgba(255,255,255,0.7)';
+        octx.lineWidth = 1;
+        octx.beginPath();
+        orb.forEach(([zr, zi], i) => {
+          const { px, py } = complexToPixel(zr, zi);
+          i === 0 ? octx.moveTo(px, py) : octx.lineTo(px, py);
+        });
+        octx.stroke();
+        octx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (const [zr, zi] of orb) {
+          const { px, py } = complexToPixel(zr, zi);
+          octx.beginPath(); octx.arc(px, py, 2, 0, 7); octx.fill();
+        }
+      }
+      const m = complexToPixel(zr0, zi0);
+      octx.strokeStyle = '#ffffff';
+      octx.lineWidth = 1.5;
+      octx.beginPath(); octx.arc(m.px, m.py, 6, 0, 7); octx.stroke();
+      octx.beginPath();
+      octx.moveTo(m.px - 10, m.py); octx.lineTo(m.px + 10, m.py);
+      octx.moveTo(m.px, m.py - 10); octx.lineTo(m.px, m.py + 10);
+      octx.stroke();
+    }
+    function clearOverlay() { octx.clearRect(0, 0, W, H); lastInspect = null; }
+
+    // ---- changing c ---------------------------------------------------------
+    function setC(re, im, full) {
+      c.re = re; c.im = im;
+      clearOverlay();
+      drawPicker();
+      if (full) renderFull(); else render(3);
+    }
+
+    // ---- view changes (Julia canvas) ----------------------------------------
+    function resetView() {
+      view.cx = 0; view.cy = 0; view.scale = 3.2 / W;
+      clearOverlay();
+    }
+    function zoomAt(px, py, factor) {
+      const newScale = view.scale * factor;
+      view.cx += (px - W / 2) * (view.scale - newScale);
+      view.cy -= (py - H / 2) * (view.scale - newScale);
+      view.scale = newScale;
+      clearOverlay();
+    }
+
+    // ---- sizing -------------------------------------------------------------
+    function sizeJulia(keepView) {
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 0.75);
+      const span = view.scale * (W || cssW);
+      W = cssW; H = cssH;
+      canvas.width = W; canvas.height = H;
+      overlay.width = W; overlay.height = H;
+      view.scale = keepView ? span / W : 3.2 / W;
+    }
+    function sizePicker() {
+      const cssW = Math.round(pstage.clientWidth);
+      PW = cssW; PH = Math.round(cssW * 0.62);   // mini map aspect ratio
+      picker.width = PW; picker.height = PH;
+    }
+
+    // ---- events -------------------------------------------------------------
+    let drag = null;
+    stage.addEventListener('pointerdown', (e) => {
+      stage.setPointerCapture(e.pointerId);
+      drag = { x: e.offsetX, y: e.offsetY, sx: e.offsetX, sy: e.offsetY, moved: false };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
+      if (Math.abs(e.offsetX - drag.sx) + Math.abs(e.offsetY - drag.sy) > 4) {
+        drag.moved = true; stage.classList.add('grabbing');
+      }
+      if (!drag.moved) return;
+      view.cx -= dx * view.scale;
+      view.cy += dy * view.scale;
+      drag.x = e.offsetX; drag.y = e.offsetY;
+      clearOverlay();
+      render(3);
+    });
+    stage.addEventListener('pointerup', (e) => {
+      stage.classList.remove('grabbing');
+      if (drag && !drag.moved) inspect(e.offsetX, e.offsetY);
+      else if (drag && drag.moved) renderFull();
+      drag = null;
+    });
+    stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grabbing'); });
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 0.8 : 1.25);
+      scheduleFull(3);
+    }, { passive: false });
+    stage.addEventListener('dblclick', (e) => { zoomAt(e.offsetX, e.offsetY, 0.5); renderFull(); });
+
+    // picker drag → set c live
+    let pdrag = false;
+    function pickFromEvent(e) {
+      const { cr, ci } = pickerPixelToComplex(e.offsetX, e.offsetY);
+      setC(cr, ci, false);
+    }
+    pstage.addEventListener('pointerdown', (e) => {
+      pstage.setPointerCapture(e.pointerId); pdrag = true; pickFromEvent(e);
+    });
+    pstage.addEventListener('pointermove', (e) => { if (pdrag) pickFromEvent(e); });
+    pstage.addEventListener('pointerup', (e) => {
+      pdrag = false; pickFromEvent(e); renderFull();
+    });
+    pstage.addEventListener('pointercancel', () => { pdrag = false; });
+
+    document.getElementById('iter').addEventListener('input', (e) => {
+      maxIter = parseInt(e.target.value, 10);
+      document.getElementById('iter-val').textContent = maxIter;
+      scheduleFull(3);
+    });
+    document.getElementById('palette').addEventListener('change', (e) => {
+      paletteName = e.target.value; renderFull();
+    });
+    document.getElementById('zoom-in').addEventListener('click', () => { zoomAt(W / 2, H / 2, 0.6); renderFull(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { zoomAt(W / 2, H / 2, 1.6); renderFull(); });
+    document.getElementById('reset').addEventListener('click', () => { resetView(); renderFull(); });
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'julia.png'; a.href = canvas.toDataURL('image/png'); a.click();
+    });
+    document.getElementById('random').addEventListener('click', () => {
+      // Pick a c near the Mandelbrot boundary so the Julia set is interesting.
+      for (let tries = 0; tries < 200; tries++) {
+        const cr = -2 + Math.random() * 2.5, ci = (Math.random() - 0.5) * 2.4;
+        const n = mandelEscapeCount(cr, ci, 200);
+        if (n > 8 && n < 200) { resetView(); setC(cr, ci, true); return; }
+      }
+    });
+    document.querySelectorAll('.chip[data-c]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const [re, im] = chip.dataset.c.split(',').map(Number);
+        resetView(); setC(re, im, true);
+      });
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        sizeJulia(true); sizePicker(); renderPicker(); renderFull();
+      }, 150);
+    });
+
+    // ---- boot ---------------------------------------------------------------
+    async function init() {
+      sizeJulia(false); resetView();
+      sizePicker(); renderPicker();
+      renderFull();                       // first paint is pure JS, instant
+      pyodide = await loadPyodide();      // Python loads in the background
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+    }
+    init();
+  </script>
+</body>
+</html>
