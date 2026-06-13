@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Newton Fractal Explorer — Root-Finding Basins of Attraction | 1618.dev</title>
+  <meta name="description" content="Interactive Newton fractal explorer. Watch Newton's method paint the basins of attraction for z³−1 and other polynomials, drag and zoom, tune the relaxation factor, and inspect any point's path to a root." />
+  <meta name="keywords" content="newton fractal, newtons method fractal, basins of attraction, root finding fractal, z cubed minus 1, newton raphson complex, relaxation newton, polynomial roots fractal, complex dynamics, interactive fractal, newton basin boundary" />
+  <link rel="canonical" href="https://1618.dev/tools/newton-fractal/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Newton Fractal Explorer — 1618.dev" />
+  <meta property="og:description" content="Watch Newton's method paint interlocking basins of attraction for z³−1 and other polynomials. Drag, zoom, tune the relaxation factor, and trace any point's path to a root." />
+  <meta property="og:url" content="https://1618.dev/tools/newton-fractal/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Newton Fractal Explorer — 1618.dev" />
+  <meta name="twitter:description" content="Newton's method basins of attraction as an interactive fractal. Drag, zoom, and inspect any point's path to a root." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Newton Fractal Explorer",
+    "description": "Interactive Newton fractal explorer. Newton's method basins of attraction for z³−1 and other polynomials, with pan, zoom, a relaxation factor, and a per-point path inspector.",
+    "url": "https://1618.dev/tools/newton-fractal/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Newton Fractal Explorer</h2>
+      <p class="muted">
+        Newton's method hunts a root by repeatedly stepping
+        <code>z &rarr; z &minus; p(z) / p&prime;(z)</code>. On the real line it
+        just works. On the <em>complex</em> plane, colour every starting point by
+        <strong>which root it ends up at</strong> and the basins of attraction
+        interlock in a fractal — the border between "falls to this root" and "that
+        root" is infinitely crenellated. <strong>Drag</strong> to pan,
+        <strong>scroll</strong> to zoom, and <strong>click</strong> any point to
+        watch its path to a root.
+      </p>
+
+      <div class="fractal-bar" id="bar">
+        <span>p(z) = <b id="b-poly">—</b></span>
+        <span>roots <b id="b-roots">—</b></span>
+        <span>zoom <b id="b-zoom">—</b></span>
+        <span class="busy" id="b-busy" hidden>rendering…</span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas class="base" id="canvas"></canvas>
+        <canvas class="overlay" id="overlay"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:-0.25rem">
+        Each colour is one root's basin; brightness shows how fast Newton got
+        there. Black points never settle (a cycle, or a knife-edge between basins).
+        The ringed dots mark the actual roots.
+      </p>
+
+      <form class="card" id="controls">
+        <div class="controls-grid">
+          <label>
+            Polynomial
+            <select id="poly">
+              <option value="cubic" selected>z³ − 1 (three roots)</option>
+              <option value="quartic">z⁴ − 1 (four roots)</option>
+              <option value="quintic">z⁵ − 1 (five roots)</option>
+              <option value="tricky">z³ − 2z + 2 (the trap)</option>
+              <option value="octic">z⁸ + 15z⁴ − 16 (eight roots)</option>
+            </select>
+          </label>
+          <label>
+            Colour scheme
+            <select id="scheme">
+              <option value="vivid" selected>Vivid</option>
+              <option value="candy">Candy</option>
+              <option value="dusk">Dusk</option>
+            </select>
+          </label>
+          <label>
+            Max iterations — <b id="iter-val">50</b>
+            <input type="range" id="iter" min="10" max="300" step="5" value="50" />
+          </label>
+          <label>
+            Relaxation a — <b id="relax-val">1.00</b>
+            <input type="range" id="relax" min="0.30" max="1.90" step="0.01" value="1.00" />
+          </label>
+        </div>
+        <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="secondary" id="zoom-in">Zoom in</button>
+          <button type="button" class="secondary" id="zoom-out">Zoom out</button>
+          <button type="button" class="secondary" id="reset">Reset view</button>
+          <button type="button" class="secondary" id="save">Save PNG</button>
+        </div>
+      </form>
+
+      <div id="inspect" class="card" hidden>
+        <div class="result">
+          <span class="label">Point inspector</span>
+          <span id="i-coord" style="font-size:1.3rem">—</span>
+        </div>
+        <p class="muted" id="i-verdict" style="margin-top:0.5rem">—</p>
+        <table>
+          <tbody id="i-rows"></tbody>
+        </table>
+        <p class="muted" style="margin-top:0.6rem">
+          The dots trace this start's Newton iterates
+          <code>z &rarr; z &minus; a&middot;p/p&prime;</code> — hopping across the
+          plane until they land on a root (or never do).
+        </p>
+      </div>
+
+      <h3>What you are looking at</h3>
+      <p class="muted">
+        Pick a polynomial like <code>p(z) = z&sup3; &minus; 1</code>. It has three
+        roots, evenly spaced around the unit circle. Drop a starting point anywhere
+        and run Newton's iteration; it will almost always spiral into one of the
+        three. Paint each starting point in that root's colour and you get three
+        <strong>basins of attraction</strong> — but their shared border is not a
+        tidy curve. Zoom into any boundary and you find all three colours meeting
+        again, forever. That endlessly repeating three-way frontier is the Newton
+        fractal.
+      </p>
+
+      <h3>The iteration</h3>
+      <div class="formula">z<sub>n+1</sub> = z<sub>n</sub> &minus; a &middot; p(z<sub>n</sub>) / p&prime;(z<sub>n</sub>)</div>
+      <p class="muted" style="margin-top:0.6rem">
+        <code>p&prime;</code> is the derivative; the ratio <code>p/p&prime;</code>
+        is Newton's correction, the jump that lands you near a root. The
+        <strong>relaxation factor a</strong> (the slider above) scales that jump:
+        <em>a = 1</em> is ordinary Newton; below 1 it under-steps and the basins
+        fatten and smooth; above 1 it over-steps and the boundaries grow lacy and
+        wild. It is the most fun knob on the page — sweep it slowly.
+      </p>
+
+      <h3>Brightness = speed</h3>
+      <p class="muted">
+        Two points can fall to the same root but at very different speeds — one in
+        three steps, one in thirty as it picks its way along a basin edge. We shade
+        each pixel by its iteration count: bright where Newton converged fast, dark
+        where it dithered near the boundary. That shading is what makes the fractal
+        filigree pop out along every frontier.
+      </p>
+
+      <h3>When Newton gets stuck</h3>
+      <p class="muted">
+        Newton's method does not always converge. The polynomial
+        <code>z&sup3; &minus; 2z + 2</code> (the <em>trap</em> in the menu) has a
+        notorious flaw: start at <em>z = 0</em> and the iteration bounces
+        <em>0 &rarr; 1 &rarr; 0 &rarr; 1</em> forever, an attracting cycle that
+        never reaches any root. A whole region of starting points drains into that
+        cycle; we paint them black. Those black islands are real mathematics, not a
+        rendering gap — Newton genuinely fails there.
+      </p>
+
+      <h3>How this page is built</h3>
+      <p class="muted">
+        The math lives in <code>logic.py</code> — the Newton step, the polynomials
+        and their roots, the nearest-root classification, and the cycle detection
+        (a point that never settles within the iteration budget). The picture is
+        drawn in JavaScript on a canvas for speed, but the <em>same</em> Python
+        backs the point inspector, so the path and root under your cursor come
+        straight from the source of truth.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../mandelbrot/">Mandelbrot set explorer</a>
+        <a href="../julia/">Julia set explorer</a>
+        <a href="../golden-ratio/">Golden ratio calculator</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">newton fractal</span>
+        <span class="kw">newton's method fractal</span>
+        <span class="kw">basins of attraction</span>
+        <span class="kw">root finding fractal</span>
+        <span class="kw">z cubed minus 1</span>
+        <span class="kw">newton raphson complex</span>
+        <span class="kw">relaxation newton</span>
+        <span class="kw">polynomial roots fractal</span>
+        <span class="kw">complex dynamics</span>
+        <span class="kw">newton basin boundary</span>
+        <span class="kw">interactive fractal</span>
+        <span class="kw">newton cycle trap</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- polynomial data (mirrors logic.POLYS) ------------------------------
+    // coeffs in descending powers; roots as [re, im].
+    const POLYS = {
+      cubic:   { label: 'z³ − 1', coeffs: [1, 0, 0, -1],
+                 roots: [[1, 0], [-0.5, 0.8660254037844387], [-0.5, -0.8660254037844387]] },
+      quartic: { label: 'z⁴ − 1', coeffs: [1, 0, 0, 0, -1],
+                 roots: [[1, 0], [-1, 0], [0, 1], [0, -1]] },
+      quintic: { label: 'z⁵ − 1', coeffs: [1, 0, 0, 0, 0, -1],
+                 roots: [[1, 0], [0.30901699437494745, 0.9510565162951535],
+                         [-0.8090169943749475, 0.5877852522924731],
+                         [-0.8090169943749475, -0.5877852522924731],
+                         [0.30901699437494745, -0.9510565162951535]] },
+      tricky:  { label: 'z³ − 2z + 2', coeffs: [1, 0, -2, 2],
+                 roots: [[-1.7692923542386314, 0], [0.8846461771193157, 0.5897428050222054],
+                         [0.8846461771193157, -0.5897428050222054]] },
+      octic:   { label: 'z⁸ + 15z⁴ − 16', coeffs: [1, 0, 0, 0, 15, 0, 0, 0, -16],
+                 roots: [[1, 0], [-1, 0], [0, 1], [0, -1],
+                         [1.4142135623730951, 1.4142135623730951],
+                         [-1.4142135623730951, 1.4142135623730951],
+                         [-1.4142135623730951, -1.4142135623730951],
+                         [1.4142135623730951, -1.4142135623730951]] },
+    };
+    function derivOf(coeffs) {
+      const n = coeffs.length - 1;
+      return coeffs.slice(0, n).map((c, i) => c * (n - i));
+    }
+    for (const k in POLYS) POLYS[k].dcoeffs = derivOf(POLYS[k].coeffs);
+
+    // ---- state --------------------------------------------------------------
+    let pyodide = null;
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const ctx = canvas.getContext('2d');
+    const octx = overlay.getContext('2d');
+    const stage = document.getElementById('stage');
+
+    let W = 0, H = 0;
+    const view = { cx: 0, cy: 0, scale: 0.007 };
+    let polyName = 'cubic';
+    let scheme = 'vivid';
+    let maxIter = 50;
+    let relax = 1.0;
+    let renderTimer = null;
+    let lastInspect = null;
+    const TOL2 = 1e-12;
+
+    // ---- colour schemes -----------------------------------------------------
+    const SCHEMES = {
+      vivid: { sat: 0.72, light: 0.55, hue0: 0.00 },
+      candy: { sat: 0.60, light: 0.64, hue0: 0.15 },
+      dusk:  { sat: 0.48, light: 0.50, hue0: 0.55 },
+    };
+    function hslToRgb(h, s, l) {
+      const f = (n) => {
+        const k = (n + h * 12) % 12;
+        const a = s * Math.min(l, 1 - l);
+        return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+      };
+      return [f(0) * 255, f(8) * 255, f(4) * 255];
+    }
+    function rootColor(idx, count, shade) {
+      const sc = SCHEMES[scheme];
+      const hue = (sc.hue0 + idx / count) % 1;
+      const light = sc.light * (0.30 + 0.70 * shade);   // dark when slow
+      return hslToRgb(hue, sc.sat, light);
+    }
+
+    // ---- the hot loop: Newton in JS (mirrors logic.newton) ------------------
+    let CUR = POLYS.cubic;
+    function newtonRoot(zr, zi) {
+      const co = CUR.coeffs, dco = CUR.dcoeffs, roots = CUR.roots;
+      let n = 0, converged = false;
+      for (; n < maxIter; n++) {
+        // p(z) and p'(z) by Horner in complex arithmetic.
+        let pr = 0, pi = 0;
+        for (let i = 0; i < co.length; i++) {
+          const nr = pr * zr - pi * zi + co[i];
+          pi = pr * zi + pi * zr; pr = nr;
+        }
+        let dr = 0, di = 0;
+        for (let i = 0; i < dco.length; i++) {
+          const nr = dr * zr - di * zi + dco[i];
+          di = dr * zi + di * zr; dr = nr;
+        }
+        const dmag = dr * dr + di * di;
+        if (dmag < 1e-28) break;
+        // step = a * p / p'  (divide via conjugate)
+        const qr = (pr * dr + pi * di) / dmag;
+        const qi = (pi * dr - pr * di) / dmag;
+        const sr = relax * qr, si = relax * qi;
+        zr -= sr; zi -= si;
+        if (sr * sr + si * si < TOL2) { converged = true; n++; break; }
+      }
+      if (!converged) return -1;                 // black: never settled
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < roots.length; i++) {
+        const dx = zr - roots[i][0], dy = zi - roots[i][1];
+        const d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = i; }
+      }
+      const shade = Math.pow(1 - Math.min(1, n / maxIter), 0.7);
+      return best + shade;                        // pack root index + speed
+    }
+
+    // ---- rendering ----------------------------------------------------------
+    function pixelToComplex(px, py) {
+      return { cr: view.cx + (px - W / 2) * view.scale, ci: view.cy - (py - H / 2) * view.scale };
+    }
+    function complexToPixel(zr, zi) {
+      return { px: (zr - view.cx) / view.scale + W / 2, py: H / 2 - (zi - view.cy) / view.scale };
+    }
+    function render(step) {
+      step = step || 1;
+      const img = ctx.createImageData(W, H);
+      const data = img.data;
+      const halfW = W / 2, halfH = H / 2;
+      const count = CUR.roots.length;
+      for (let py = 0; py < H; py += step) {
+        const zi0 = view.cy - (py - halfH) * view.scale;
+        for (let px = 0; px < W; px += step) {
+          const zr0 = view.cx + (px - halfW) * view.scale;
+          const packed = newtonRoot(zr0, zi0);
+          let r, g, b;
+          if (packed < 0) { r = g = b = 0; }
+          else {
+            const idx = Math.floor(packed), shade = packed - idx;
+            const c = rootColor(idx, count, shade); r = c[0]; g = c[1]; b = c[2];
+          }
+          const yEnd = Math.min(py + step, H), xEnd = Math.min(px + step, W);
+          for (let yy = py; yy < yEnd; yy++) {
+            let o = (yy * W + px) * 4;
+            for (let xx = px; xx < xEnd; xx++) {
+              data[o] = r; data[o + 1] = g; data[o + 2] = b; data[o + 3] = 255;
+              o += 4;
+            }
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      updateBar();
+    }
+    function renderFull() {
+      const busy = document.getElementById('b-busy');
+      busy.hidden = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        render(1);
+        busy.hidden = true;
+        drawOverlay();
+      }));
+    }
+    function scheduleFull(previewStep) {
+      render(previewStep || 3);
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(renderFull, 90);
+    }
+
+    // ---- info bar -----------------------------------------------------------
+    function coordDigits() { return Math.max(3, Math.ceil(-Math.log10(view.scale)) + 2); }
+    function updateBar() {
+      document.getElementById('b-poly').textContent = CUR.label;
+      document.getElementById('b-roots').textContent = CUR.roots.length;
+      const span = view.scale * W;
+      document.getElementById('b-zoom').textContent =
+        (3.6 / span).toLocaleString(undefined, { maximumFractionDigits: 0 }) + '×';
+    }
+
+    // ---- overlay: root markers (+ orbit when inspecting) --------------------
+    function drawRoots() {
+      const count = CUR.roots.length;
+      CUR.roots.forEach((rt, i) => {
+        const { px, py } = complexToPixel(rt[0], rt[1]);
+        const c = rootColor(i, count, 1);
+        octx.fillStyle = `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+        octx.strokeStyle = '#ffffff';
+        octx.lineWidth = 1.5;
+        octx.beginPath(); octx.arc(px, py, 4, 0, 7); octx.fill(); octx.stroke();
+      });
+    }
+    function drawOverlay() {
+      octx.clearRect(0, 0, W, H);
+      if (lastInspect) drawOrbit(lastInspect.zr, lastInspect.zi, lastInspect.orbit);
+      drawRoots();
+    }
+    function drawOrbit(zr0, zi0, orb) {
+      if (orb && orb.length > 1) {
+        octx.strokeStyle = 'rgba(255,255,255,0.75)';
+        octx.lineWidth = 1;
+        octx.beginPath();
+        orb.forEach(([zr, zi], i) => {
+          const { px, py } = complexToPixel(zr, zi);
+          i === 0 ? octx.moveTo(px, py) : octx.lineTo(px, py);
+        });
+        octx.stroke();
+        octx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (const [zr, zi] of orb) {
+          const { px, py } = complexToPixel(zr, zi);
+          octx.beginPath(); octx.arc(px, py, 1.8, 0, 7); octx.fill();
+        }
+      }
+      const m = complexToPixel(zr0, zi0);
+      octx.strokeStyle = '#ffffff'; octx.lineWidth = 1.5;
+      octx.beginPath(); octx.arc(m.px, m.py, 6, 0, 7); octx.stroke();
+      octx.beginPath();
+      octx.moveTo(m.px - 10, m.py); octx.lineTo(m.px + 10, m.py);
+      octx.moveTo(m.px, m.py - 10); octx.lineTo(m.px, m.py + 10);
+      octx.stroke();
+    }
+    function clearInspect() { lastInspect = null; drawOverlay(); }
+
+    // ---- point inspector (calls logic.py via Pyodide) -----------------------
+    function inspect(px, py) {
+      if (!pyodide) return;
+      const { cr, ci } = pixelToComplex(px, py);
+      let res, orb;
+      try {
+        const proxy = pyodide.runPython(`logic.classify(${cr}, ${ci}, '${polyName}', ${maxIter}, ${relax})`);
+        res = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+        const op = pyodide.runPython(`logic.orbit(${cr}, ${ci}, '${polyName}', 28, ${relax})`);
+        orb = op.toJs();
+        op.destroy();
+      } catch (e) { return; }
+
+      const d = coordDigits();
+      document.getElementById('i-coord').innerHTML =
+        `z₀ = ${cr.toFixed(d)} ${ci < 0 ? '−' : '+'} ${Math.abs(ci).toFixed(d)} i`;
+      document.getElementById('i-verdict').textContent = res.verdict;
+      const rows = [
+        ['Converged?', res.converged ? 'yes' : 'no — cycle/edge'],
+        ['Root reached', res.converged ? `#${res.root_index + 1} (${res.root})` : '—'],
+        ['Iterations', `${res.iterations} / ${res.max_iter}`],
+        ['Final z', `${res.zr.toFixed(d)} ${res.zi < 0 ? '−' : '+'} ${Math.abs(res.zi).toFixed(d)} i`],
+      ];
+      const tbody = document.getElementById('i-rows');
+      tbody.innerHTML = '';
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.textContent = k;
+        const td2 = document.createElement('td');
+        td2.style.fontVariantNumeric = 'tabular-nums'; td2.textContent = v;
+        tr.appendChild(td1); tr.appendChild(td2); tbody.appendChild(tr);
+      }
+      document.getElementById('inspect').hidden = false;
+      lastInspect = { zr: cr, zi: ci, orbit: orb };
+      drawOverlay();
+    }
+
+    // ---- view changes -------------------------------------------------------
+    function resetView() { view.cx = 0; view.cy = 0; view.scale = 3.6 / W; clearInspect(); }
+    function zoomAt(px, py, factor) {
+      const newScale = view.scale * factor;
+      view.cx += (px - W / 2) * (view.scale - newScale);
+      view.cy -= (py - H / 2) * (view.scale - newScale);
+      view.scale = newScale;
+      clearInspect();
+    }
+
+    // ---- sizing -------------------------------------------------------------
+    function sizeCanvas(keepView) {
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 0.82);     // roots span a near-square region
+      const span = view.scale * (W || cssW);
+      W = cssW; H = cssH;
+      canvas.width = W; canvas.height = H;
+      overlay.width = W; overlay.height = H;
+      view.scale = keepView ? span / W : 3.6 / W;
+    }
+
+    // ---- events -------------------------------------------------------------
+    let drag = null;
+    stage.addEventListener('pointerdown', (e) => {
+      stage.setPointerCapture(e.pointerId);
+      drag = { x: e.offsetX, y: e.offsetY, sx: e.offsetX, sy: e.offsetY, moved: false };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
+      if (Math.abs(e.offsetX - drag.sx) + Math.abs(e.offsetY - drag.sy) > 4) {
+        drag.moved = true; stage.classList.add('grabbing');
+      }
+      if (!drag.moved) return;
+      view.cx -= dx * view.scale; view.cy += dy * view.scale;
+      drag.x = e.offsetX; drag.y = e.offsetY;
+      lastInspect = null;
+      render(3); drawOverlay();
+    });
+    stage.addEventListener('pointerup', (e) => {
+      stage.classList.remove('grabbing');
+      if (drag && !drag.moved) inspect(e.offsetX, e.offsetY);
+      else if (drag && drag.moved) renderFull();
+      drag = null;
+    });
+    stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grabbing'); });
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 0.8 : 1.25);
+      scheduleFull(3);
+    }, { passive: false });
+    stage.addEventListener('dblclick', (e) => { zoomAt(e.offsetX, e.offsetY, 0.5); renderFull(); });
+
+    document.getElementById('poly').addEventListener('change', (e) => {
+      polyName = e.target.value; CUR = POLYS[polyName];
+      resetView(); renderFull();
+    });
+    document.getElementById('scheme').addEventListener('change', (e) => { scheme = e.target.value; renderFull(); });
+    document.getElementById('iter').addEventListener('input', (e) => {
+      maxIter = parseInt(e.target.value, 10);
+      document.getElementById('iter-val').textContent = maxIter;
+      scheduleFull(3);
+    });
+    document.getElementById('relax').addEventListener('input', (e) => {
+      relax = parseFloat(e.target.value);
+      document.getElementById('relax-val').textContent = relax.toFixed(2);
+      scheduleFull(3);
+    });
+    document.getElementById('zoom-in').addEventListener('click', () => { zoomAt(W / 2, H / 2, 0.6); renderFull(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { zoomAt(W / 2, H / 2, 1.6); renderFull(); });
+    document.getElementById('reset').addEventListener('click', () => { resetView(); renderFull(); });
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'newton-fractal.png'; a.href = canvas.toDataURL('image/png'); a.click();
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { sizeCanvas(true); renderFull(); }, 150);
+    });
+
+    // ---- boot ---------------------------------------------------------------
+    async function init() {
+      sizeCanvas(false); resetView();
+      renderFull();                       // first paint is pure JS, instant
+      pyodide = await loadPyodide();      // Python loads in the background
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+    }
+    init();
+  </script>
+</body>
+</html>
