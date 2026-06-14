@@ -94,6 +94,16 @@
             Points — <b id="pts-val">200k</b>
             <input type="range" id="points" min="50000" max="600000" step="10000" value="200000" />
           </label>
+          <label>
+            Draw speed
+            <select id="speed">
+              <option value="600">Very slow</option>
+              <option value="1800">Slow</option>
+              <option value="4500" selected>Medium</option>
+              <option value="9000">Fast</option>
+              <option value="22000">Turbo</option>
+            </select>
+          </label>
         </div>
         <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
           <button type="button" class="secondary" id="replay">Replay</button>
@@ -249,7 +259,7 @@
 
     // animation
     let buf = null, fx = 0, fy = 0, plotted = 0, rafId = null, cum = [];
-    const BATCH = 9000;
+    let batchSize = 4500;               // points plotted per animation frame — the draw-speed knob
     let editTimer = null;
 
     function clone(ms) { return ms.map((m) => ({ ...m })); }
@@ -319,7 +329,7 @@
     }
     function frame() {
       if (plotted < target) {
-        plotBatch(BATCH);
+        plotBatch(batchSize);
         ctx.putImageData(buf, 0, 0);
         updateBar();
         rafId = requestAnimationFrame(frame);
@@ -464,6 +474,12 @@
     }, { passive: false });
 
     document.getElementById('color').addEventListener('change', (e) => { colorMode = e.target.value; restart(false); });
+    document.getElementById('speed').addEventListener('change', (e) => {
+      batchSize = parseInt(e.target.value, 10);
+      // restart the draw only if it had already finished, so a mid-draw change just adjusts pace
+      if (!rafId && plotted < target) { document.getElementById('b-busy').hidden = false; rafId = requestAnimationFrame(frame); }
+      else if (plotted >= target) restart(false);
+    });
     document.getElementById('points').addEventListener('input', (e) => {
       target = parseInt(e.target.value, 10);
       document.getElementById('pts-val').textContent = fmtCount(target);
