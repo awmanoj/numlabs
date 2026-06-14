@@ -51,6 +51,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Mandelbrot set explorer](tools/mandelbrot/) — interactive escape-time fractal: drag to pan, scroll to zoom, tune iteration depth and colour palette, jump to famous spots, and click any point to inspect its orbit and escape count
 - [Julia set explorer](tools/julia/) — drag the parameter c across a mini Mandelbrot map and watch the Julia fractal morph in real time; connected-vs-dust read-out, famous-c presets, zoom, recolour, and per-point orbit inspector
 - [Newton fractal explorer](tools/newton-fractal/) — Newton's-method basins of attraction for z³−1 and other polynomials; colour by which root each point falls to, brightness by speed, a relaxation-factor slider, zoom, and a per-point path inspector
+- [Barnsley fern generator](tools/barnsley-fern/) — an Iterated Function System drawn by the chaos game; watch the fern form from four affine maps, edit the coefficients and probabilities to mutate it, switch ferns (Cyclosorus, Fishbone, Windswept), recolour, zoom, with a logic.py-computed map-geometry table
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
 - [Quadratic equation solver](tools/quadratic-equation/) — roots (real or complex), discriminant, vertex, axis of symmetry, and factored form of ax²+bx+c=0
 - [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)

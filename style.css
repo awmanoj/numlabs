@@ -289,3 +289,15 @@ input[type="range"] {
   padding: 0;
   accent-color: var(--accent);
 }
+
+/* Editable affine-map table (Barnsley fern): compact numeric cells. */
+.coeff-table { font-variant-numeric: tabular-nums; }
+.coeff-table th, .coeff-table td { padding: 0.3rem 0.35rem; text-align: center; }
+.coeff-table th:first-child, .coeff-table td:first-child { text-align: center; }
+input.coeff-input {
+  width: 4.2rem;
+  padding: 0.3rem 0.35rem;
+  text-align: right;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}

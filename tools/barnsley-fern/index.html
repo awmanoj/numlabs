@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Barnsley Fern Generator — Chaos Game &amp; IFS Fractal | 1618.dev</title>
+  <meta name="description" content="Interactive Barnsley fern generator. Watch the chaos game draw a fern from four affine maps, edit the coefficients and probabilities to mutate it, switch ferns, zoom, and recolour." />
+  <meta name="keywords" content="barnsley fern, iterated function system, ifs fractal, chaos game, affine transformation fractal, fractal fern generator, barnsley fern coefficients, attractor fractal, fern fractal, interactive fractal, self similar fractal" />
+  <link rel="canonical" href="https://1618.dev/tools/barnsley-fern/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Barnsley Fern Generator — 1618.dev" />
+  <meta property="og:description" content="Watch the chaos game draw a Barnsley fern from four affine maps. Edit the coefficients to mutate it, switch ferns, zoom, and recolour." />
+  <meta property="og:url" content="https://1618.dev/tools/barnsley-fern/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Barnsley Fern Generator — 1618.dev" />
+  <meta name="twitter:description" content="The chaos game draws a fern from four affine maps. Edit the coefficients and watch it mutate. Interactive, in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Barnsley Fern Generator",
+    "description": "Interactive Barnsley fern generator. The chaos game draws a fern from four affine maps; edit the coefficients and probabilities to mutate it, switch ferns, zoom, and recolour.",
+    "url": "https://1618.dev/tools/barnsley-fern/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Barnsley Fern Generator</h2>
+      <p class="muted">
+        This fern isn't drawn pixel by pixel — it's played as a game. Start at a
+        point, then repeatedly roll a die and jump according to one of four
+        <strong>affine maps</strong> (each picked with its own probability),
+        plotting every landing. The scattered dots converge onto one fixed shape,
+        the maps' <em>attractor</em> — a fern. It's the cleanest example of an
+        <strong>Iterated Function System (IFS)</strong>. Edit the numbers below and
+        watch the fern mutate.
+      </p>
+
+      <div class="fractal-bar" id="bar">
+        <span><b id="b-name">—</b></span>
+        <span>points <b id="b-points">—</b></span>
+        <span>zoom <b id="b-zoom">—</b></span>
+        <span class="busy" id="b-busy" hidden>drawing…</span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas class="base" id="canvas"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:-0.25rem">
+        Watch it draw itself · scroll to zoom · drag to pan. Each preset and every
+        edit replays the chaos game from scratch.
+      </p>
+
+      <div class="chips" id="presets" style="margin-top:0.75rem">
+        <button type="button" class="chip" data-preset="classic">Classic</button>
+        <button type="button" class="chip" data-preset="cyclosorus">Cyclosorus</button>
+        <button type="button" class="chip" data-preset="fishbone">Fishbone</button>
+        <button type="button" class="chip" data-preset="windswept">Windswept</button>
+      </div>
+
+      <form class="card" id="controls">
+        <div class="controls-grid">
+          <label>
+            Colour
+            <select id="color">
+              <option value="botanical" selected>Botanical green</option>
+              <option value="transform">By transform</option>
+            </select>
+          </label>
+          <label>
+            Points — <b id="pts-val">200k</b>
+            <input type="range" id="points" min="50000" max="600000" step="10000" value="200000" />
+          </label>
+        </div>
+        <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="secondary" id="replay">Replay</button>
+          <button type="button" class="secondary" id="reset-coeffs">Reset coefficients</button>
+          <button type="button" class="secondary" id="reset-view">Reset view</button>
+          <button type="button" class="secondary" id="save">Save PNG</button>
+        </div>
+      </form>
+
+      <h3>The four maps — edit to mutate</h3>
+      <p class="muted">
+        Each row is one affine map <code>x&prime; = a·x + b·y + e</code>,
+        <code>y&prime; = c·x + d·y + f</code>, chosen with probability <code>p</code>.
+        Nudge any value and the fern redraws. (Probabilities are renormalised to
+        sum to 1.)
+      </p>
+      <div class="card" style="overflow-x:auto">
+        <table id="coeffs" class="coeff-table">
+          <thead>
+            <tr><th>map</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th><th>p</th></tr>
+          </thead>
+          <tbody id="coeff-rows"></tbody>
+        </table>
+      </div>
+
+      <h3>Geometry of each map</h3>
+      <p class="muted">
+        What each map actually <em>does</em> to the plane — its scale (largest and
+        smallest stretch), rotation, and area factor (the determinant). Computed in
+        <code>logic.py</code>. Every map shrinks (largest scale &lt; 1); that
+        contraction is exactly why the chaos game settles onto a finite fern
+        instead of flying apart.
+      </p>
+      <div class="card" style="overflow-x:auto">
+        <table id="geom">
+          <thead>
+            <tr><th>map</th><th>p</th><th>scale (max × min)</th><th>rotation</th><th>area ×</th><th>role</th></tr>
+          </thead>
+          <tbody id="geom-rows"></tbody>
+        </table>
+      </div>
+
+      <h3>What an Iterated Function System is</h3>
+      <p class="muted">
+        An IFS is just a small set of <strong>contraction maps</strong> — transforms
+        that move points closer together. A deep theorem (Hutchinson, 1981)
+        guarantees any such set has exactly one <em>attractor</em>: a unique shape
+        that is the union of shrunken copies of itself under the maps. The fern is
+        the attractor of these four. Because each map contracts, fine detail keeps
+        nesting inside coarse detail — that self-similarity is the fractal.
+      </p>
+
+      <h3>Why the chaos game works</h3>
+      <p class="muted">
+        You'd think jumping at random would give noise. It doesn't, for a subtle
+        reason: every map drags points <em>toward</em> the attractor, so after a few
+        jumps your point is effectively on the fern and stays there forever after,
+        wherever you started. Each plotted dot is a real point of the attractor. The
+        probabilities only control <em>density</em> — set roughly proportional to
+        each piece's area so the dots spread evenly rather than piling up.
+      </p>
+
+      <h3>What the four maps do</h3>
+      <ul class="muted">
+        <li><strong>Map 1 (~1%)</strong> — flattens everything onto the
+          <em>y</em>-axis: it draws the stem.</li>
+        <li><strong>Map 2 (~85%)</strong> — shrinks the whole fern slightly and
+          shifts it up, nesting the entire plant one notch higher. This near-copy,
+          repeated, builds the main frond.</li>
+        <li><strong>Maps 3 &amp; 4 (~7% each)</strong> — shrink and rotate the fern
+          down to the lower-left and lower-right, spawning the two bottom leaflets;
+          every leaflet is a miniature of the whole.</li>
+      </ul>
+
+      <h3>How this page is built</h3>
+      <p class="muted">
+        The math lives in <code>logic.py</code> — the affine maps, the chaos-game
+        step, the probability selection, and the geometric decomposition of each
+        map. The fern is plotted in JavaScript (hundreds of thousands of points,
+        animated so you can watch it form), but the <em>same</em> Python computes
+        the geometry table above, so those numbers come straight from the source of
+        truth.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../mandelbrot/">Mandelbrot set explorer</a>
+        <a href="../julia/">Julia set explorer</a>
+        <a href="../newton-fractal/">Newton fractal explorer</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">barnsley fern</span>
+        <span class="kw">iterated function system</span>
+        <span class="kw">ifs fractal</span>
+        <span class="kw">chaos game</span>
+        <span class="kw">affine transformation fractal</span>
+        <span class="kw">fractal fern generator</span>
+        <span class="kw">barnsley fern coefficients</span>
+        <span class="kw">attractor fractal</span>
+        <span class="kw">self similar fractal</span>
+        <span class="kw">hutchinson operator</span>
+        <span class="kw">interactive fractal</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- presets (mirror logic.PRESETS) -------------------------------------
+    const M = (a, b, c, d, e, f, p) => ({ a, b, c, d, e, f, p });
+    const PRESETS = {
+      classic: { label: 'Classic Barnsley fern', maps: [
+        M(0, 0, 0, 0.16, 0, 0, 0.01),
+        M(0.85, 0.04, -0.04, 0.85, 0, 1.6, 0.85),
+        M(0.2, -0.26, 0.23, 0.22, 0, 1.6, 0.07),
+        M(-0.15, 0.28, 0.26, 0.24, 0, 0.44, 0.07),
+      ]},
+      cyclosorus: { label: 'Cyclosorus fern', maps: [
+        M(0, 0, 0, 0.25, 0, -0.4, 0.02),
+        M(0.95, 0.005, -0.005, 0.93, -0.002, 0.5, 0.84),
+        M(0.035, -0.2, 0.16, 0.04, -0.09, 0.02, 0.07),
+        M(-0.04, 0.2, 0.16, 0.04, 0.083, 0.12, 0.07),
+      ]},
+      fishbone: { label: 'Fishbone fern', maps: [
+        M(0, 0, 0, 0.25, 0, -0.4, 0.02),
+        M(0.95, 0.002, -0.002, 0.93, -0.002, 0.5, 0.84),
+        M(0.035, -0.11, 0.27, 0.01, -0.05, 0.005, 0.07),
+        M(-0.04, 0.11, 0.27, 0.01, 0.047, 0.06, 0.07),
+      ]},
+      windswept: { label: 'Windswept fern (mutant)', maps: [
+        M(0, 0, 0, 0.16, 0, 0, 0.01),
+        M(0.85, 0.12, -0.04, 0.85, 0, 1.6, 0.85),
+        M(0.2, -0.26, 0.23, 0.22, 0, 1.6, 0.07),
+        M(-0.15, 0.28, 0.26, 0.24, 0, 0.44, 0.07),
+      ]},
+    };
+    const ROLES = ['stem', 'main frond', 'left leaflet', 'right leaflet'];
+
+    // ---- state --------------------------------------------------------------
+    let pyodide = null;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+
+    let W = 0, H = 0;
+    let maps = clone(PRESETS.classic.maps);
+    let presetName = 'classic';
+    let colorMode = 'botanical';
+    let target = 200000;
+    const view = { cx: 0, cy: 0, scale: 0.02 };
+    let fitScale = 0.02;
+
+    // animation
+    let buf = null, fx = 0, fy = 0, plotted = 0, rafId = null, cum = [];
+    const BATCH = 9000;
+    let editTimer = null;
+
+    function clone(ms) { return ms.map((m) => ({ ...m })); }
+
+    // ---- colours ------------------------------------------------------------
+    const GREENS = [[60, 110, 45], [55, 175, 70], [120, 205, 110], [95, 195, 95]];
+    const TCOLORS = [[235, 175, 70], [90, 200, 120], [110, 170, 240], [235, 120, 150]];
+    function pointColor(mi) {
+      if (colorMode === 'transform') return TCOLORS[mi % TCOLORS.length];
+      const g = GREENS[mi % GREENS.length];
+      const j = (Math.random() * 30 - 15) | 0;     // organic jitter
+      return [clamp(g[0] + j), clamp(g[1] + j), clamp(g[2] + j)];
+    }
+    function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
+
+    // ---- chaos game ---------------------------------------------------------
+    function normProbs(ms) {
+      const total = ms.reduce((s, m) => s + m.p, 0);
+      return ms.map((m) => (total > 0 ? m.p / total : 1 / ms.length));
+    }
+    function buildCum() {
+      const p = normProbs(maps);
+      cum = []; let acc = 0;
+      for (const pi of p) { acc += pi; cum.push(acc); }
+    }
+    function fitBounds() {
+      let x = 0, y = 0, xmin = 1e9, xmax = -1e9, ymin = 1e9, ymax = -1e9;
+      const p = normProbs(maps);
+      for (let i = 0; i < 15000; i++) {
+        const r = Math.random(); let mi = 0, acc = 0;
+        for (; mi < p.length; mi++) { acc += p[mi]; if (r < acc) break; }
+        if (mi >= maps.length) mi = maps.length - 1;
+        const m = maps[mi];
+        const nx = m.a * x + m.b * y + m.e, ny = m.c * x + m.d * y + m.f;
+        x = nx; y = ny;
+        if (i > 20) {
+          if (x < xmin) xmin = x; if (x > xmax) xmax = x;
+          if (y < ymin) ymin = y; if (y > ymax) ymax = y;
+        }
+      }
+      const spanX = Math.max(1e-6, xmax - xmin), spanY = Math.max(1e-6, ymax - ymin);
+      view.cx = (xmin + xmax) / 2; view.cy = (ymin + ymax) / 2;
+      view.scale = Math.max(spanX / (W * 0.86), spanY / (H * 0.92));
+      fitScale = view.scale;
+    }
+    function bgFill() {
+      const d = buf.data;
+      for (let i = 0; i < d.length; i += 4) { d[i] = 8; d[i + 1] = 11; d[i + 2] = 9; d[i + 3] = 255; }
+    }
+    function plotBatch(n) {
+      const d = buf.data, halfW = W / 2, halfH = H / 2, sc = view.scale;
+      for (let i = 0; i < n; i++) {
+        const r = Math.random(); let mi = 0;
+        for (; mi < cum.length; mi++) { if (r < cum[mi]) break; }
+        if (mi >= maps.length) mi = maps.length - 1;
+        const m = maps[mi];
+        const nx = m.a * fx + m.b * fy + m.e, ny = m.c * fx + m.d * fy + m.f;
+        fx = nx; fy = ny; plotted++;
+        if (plotted < 25) continue;
+        const px = ((fx - view.cx) / sc + halfW) | 0;
+        const py = (halfH - (fy - view.cy) / sc) | 0;
+        if (px < 0 || px >= W || py < 0 || py >= H) continue;
+        const c = pointColor(mi);
+        const o = (py * W + px) * 4;
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    function frame() {
+      if (plotted < target) {
+        plotBatch(BATCH);
+        ctx.putImageData(buf, 0, 0);
+        updateBar();
+        rafId = requestAnimationFrame(frame);
+      } else {
+        rafId = null;
+        document.getElementById('b-busy').hidden = true;
+        updateBar();
+      }
+    }
+    function restart(refit) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      buildCum();
+      if (refit) fitBounds();
+      bgFill();
+      ctx.putImageData(buf, 0, 0);
+      fx = 0; fy = 0; plotted = 0;
+      document.getElementById('b-busy').hidden = false;
+      rafId = requestAnimationFrame(frame);
+    }
+
+    // ---- info bar -----------------------------------------------------------
+    function fmtCount(n) {
+      return n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1) + 'k' : '' + n;
+    }
+    function updateBar() {
+      document.getElementById('b-name').textContent =
+        presetName === 'custom' ? 'Custom fern' : PRESETS[presetName].label;
+      document.getElementById('b-points').textContent = fmtCount(Math.max(0, plotted - 25));
+      document.getElementById('b-zoom').textContent =
+        (fitScale / view.scale).toFixed(2) + '×';
+    }
+
+    // ---- coefficient editor -------------------------------------------------
+    const KEYS = ['a', 'b', 'c', 'd', 'e', 'f', 'p'];
+    function buildEditor() {
+      const tb = document.getElementById('coeff-rows');
+      tb.innerHTML = '';
+      maps.forEach((m, mi) => {
+        const tr = document.createElement('tr');
+        const lab = document.createElement('td');
+        lab.textContent = (mi + 1) + '';
+        lab.style.color = `rgb(${TCOLORS[mi][0]},${TCOLORS[mi][1]},${TCOLORS[mi][2]})`;
+        lab.style.fontWeight = '600';
+        tr.appendChild(lab);
+        for (const k of KEYS) {
+          const td = document.createElement('td');
+          const inp = document.createElement('input');
+          inp.type = 'number'; inp.step = (k === 'p') ? '0.01' : '0.01';
+          inp.value = m[k]; inp.dataset.mi = mi; inp.dataset.k = k;
+          inp.className = 'coeff-input';
+          inp.addEventListener('input', onEdit);
+          td.appendChild(inp); tr.appendChild(td);
+        }
+        tb.appendChild(tr);
+      });
+    }
+    function onEdit(e) {
+      const mi = +e.target.dataset.mi, k = e.target.dataset.k;
+      const v = parseFloat(e.target.value);
+      if (!Number.isFinite(v)) return;
+      maps[mi][k] = v;
+      presetName = 'custom';
+      clearTimeout(editTimer);
+      editTimer = setTimeout(() => { restart(true); updateGeometry(); }, 250);
+    }
+
+    // ---- geometry table (calls logic.py via Pyodide) ------------------------
+    function updateGeometry() {
+      const tb = document.getElementById('geom-rows');
+      if (!pyodide) { tb.innerHTML = '<tr><td colspan="6" class="muted">loading…</td></tr>'; return; }
+      tb.innerHTML = '';
+      maps.forEach((m, mi) => {
+        let g;
+        try {
+          const dict = `{'a':${m.a},'b':${m.b},'c':${m.c},'d':${m.d},'e':${m.e},'f':${m.f},'p':${m.p}}`;
+          const proxy = pyodide.runPython(`logic.describe_map(${dict})`);
+          g = proxy.toJs({ dict_converter: Object.fromEntries });
+          proxy.destroy();
+        } catch (err) { return; }
+        const tr = document.createElement('tr');
+        const cells = [
+          (mi + 1) + '',
+          (normProbs(maps)[mi] * 100).toFixed(1) + '%',
+          `${g.s_max.toFixed(3)} × ${g.s_min.toFixed(3)}`,
+          `${g.rotation.toFixed(1)}°`,
+          g.det.toFixed(3),
+          ROLES[mi] || '—',
+        ];
+        cells.forEach((c, i) => {
+          const td = document.createElement('td');
+          td.textContent = c;
+          if (i === 0) { td.style.color = `rgb(${TCOLORS[mi][0]},${TCOLORS[mi][1]},${TCOLORS[mi][2]})`; td.style.fontWeight = '600'; }
+          if (i === 2 || i === 3 || i === 4) td.style.fontVariantNumeric = 'tabular-nums';
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      });
+    }
+
+    // ---- view changes -------------------------------------------------------
+    function zoomAt(px, py, factor) {
+      const newScale = view.scale * factor;
+      view.cx += (px - W / 2) * (view.scale - newScale);
+      view.cy -= (py - H / 2) * (view.scale - newScale);
+      view.scale = newScale;
+    }
+
+    // ---- sizing -------------------------------------------------------------
+    function sizeCanvas(keepView) {
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 1.05);
+      W = cssW; H = cssH;
+      canvas.width = W; canvas.height = H;
+      buf = ctx.createImageData(W, H);
+    }
+
+    // ---- events -------------------------------------------------------------
+    let drag = null;
+    stage.addEventListener('pointerdown', (e) => {
+      stage.setPointerCapture(e.pointerId);
+      drag = { sx: e.offsetX, sy: e.offsetY, dx: 0, dy: 0, moved: false };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      drag.dx = e.offsetX - drag.sx; drag.dy = e.offsetY - drag.sy;
+      if (Math.abs(drag.dx) + Math.abs(drag.dy) > 4) { drag.moved = true; stage.classList.add('grabbing'); }
+    });
+    stage.addEventListener('pointerup', () => {
+      stage.classList.remove('grabbing');
+      if (drag && drag.moved) {
+        view.cx -= drag.dx * view.scale;
+        view.cy += drag.dy * view.scale;
+        restart(false);
+      }
+      drag = null;
+    });
+    stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grabbing'); });
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 0.8 : 1.25);
+      restart(false);
+    }, { passive: false });
+
+    document.getElementById('color').addEventListener('change', (e) => { colorMode = e.target.value; restart(false); });
+    document.getElementById('points').addEventListener('input', (e) => {
+      target = parseInt(e.target.value, 10);
+      document.getElementById('pts-val').textContent = fmtCount(target);
+      // keep drawing toward the new target without a full reset if we can
+      if (!rafId && plotted < target) { document.getElementById('b-busy').hidden = false; rafId = requestAnimationFrame(frame); }
+      else if (plotted >= target) restart(false);
+    });
+    document.getElementById('replay').addEventListener('click', () => restart(false));
+    document.getElementById('reset-coeffs').addEventListener('click', () => {
+      maps = clone((PRESETS[presetName] || PRESETS.classic).maps);
+      if (presetName === 'custom') { presetName = 'classic'; maps = clone(PRESETS.classic.maps); }
+      buildEditor(); restart(true); updateGeometry();
+    });
+    document.getElementById('reset-view').addEventListener('click', () => restart(true));
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'barnsley-fern.png'; a.href = canvas.toDataURL('image/png'); a.click();
+    });
+    document.querySelectorAll('.chip[data-preset]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        presetName = chip.dataset.preset;
+        maps = clone(PRESETS[presetName].maps);
+        buildEditor(); restart(true); updateGeometry();
+      });
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { sizeCanvas(true); restart(true); }, 150);
+    });
+
+    // ---- boot ---------------------------------------------------------------
+    async function init() {
+      sizeCanvas(false);
+      buildEditor();
+      restart(true);                      // first draw is pure JS, instant
+      updateGeometry();                   // shows "loading…" until Python is ready
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      updateGeometry();
+    }
+    init();
+  </script>
+</body>
+</html>
