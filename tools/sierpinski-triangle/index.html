@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sierpinski Triangle Generator — Chaos Game &amp; Subdivision | 1618.dev</title>
+  <meta name="description" content="Interactive Sierpinski triangle generator. Watch the same fractal appear two ways — the random chaos game and deterministic subdivision — with a depth slider, live triangle-count and area stats, zoom, and recolour." />
+  <meta name="keywords" content="sierpinski triangle, sierpinski gasket, chaos game, sierpinski triangle generator, fractal triangle, recursive subdivision fractal, fractal dimension, self similar fractal, order out of chaos, pascal triangle fractal, iterated function system, interactive fractal" />
+  <link rel="canonical" href="https://1618.dev/tools/sierpinski-triangle/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sierpinski Triangle Generator — 1618.dev" />
+  <meta property="og:description" content="Watch the same fractal appear two ways — the random chaos game and deterministic subdivision. Depth slider, live stats, zoom, recolour." />
+  <meta property="og:url" content="https://1618.dev/tools/sierpinski-triangle/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Sierpinski Triangle Generator — 1618.dev" />
+  <meta name="twitter:description" content="One fractal, two routes: a random chaos game and deterministic subdivision land on the exact same Sierpinski triangle. Interactive, in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Sierpinski Triangle Generator",
+    "description": "Interactive Sierpinski triangle generator. The random chaos game and deterministic recursive subdivision both produce the same fractal; depth slider, live triangle-count and area stats, zoom, and recolour.",
+    "url": "https://1618.dev/tools/sierpinski-triangle/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Sierpinski Triangle Generator</h2>
+
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <h3 style="margin-top:0">New to fractals? Start here — order out of chaos</h3>
+        <p class="muted">
+          Here is something genuinely strange, and it's worth a minute before you
+          touch the controls. Take a triangle. Drop a dot anywhere inside it. Now
+          play a game with a single rule: <strong>roll a die to pick one of the
+          three corners, and move your dot exactly halfway toward that corner.</strong>
+          Plot where it lands. Repeat — thousands of times, the corner chosen at
+          random every single time.
+        </p>
+        <p class="muted">
+          Your instinct says this must produce a fuzzy, structureless cloud. Pure
+          chance, after all. It does the opposite. The dots refuse to land in
+          certain places, and out of the randomness a sharp, infinitely detailed
+          pattern of triangles-within-triangles emerges — the same shape every
+          time, no matter where you started or which rolls came up. This is the
+          <strong>Sierpinski triangle</strong>, and the experiment is called the
+          <em>chaos game</em>.
+        </p>
+        <p class="muted">
+          The wonder deepens when you notice you can reach the <em>exact same
+          figure</em> by routes that share nothing with each other. Build it by
+          hand — cut the middle out of a triangle, then out of the three that
+          remain, forever (the <strong>subdivision</strong> button below). Or
+          forget shapes entirely and just shade the odd numbers in
+          <strong>Pascal's triangle</strong> (further down the page). Recursion,
+          random chance, and plain arithmetic — three unrelated processes,
+          one fractal waiting at the end of each.
+        </p>
+        <p class="muted" style="margin-bottom:0">
+          That a structure this precise is hiding inside a fair die is, to a lot of
+          people, the moment maths stops feeling like bookkeeping and starts
+          feeling like discovery. Switch between the two modes below and watch it
+          happen. Then read on for why it works.
+        </p>
+      </div>
+
+      <div class="chips" id="modes" style="margin-top:1rem">
+        <button type="button" class="chip" data-mode="chaos">🎲 Chaos game (random)</button>
+        <button type="button" class="chip" data-mode="subdivision">▽ Subdivision (deterministic)</button>
+      </div>
+
+      <div class="fractal-bar" id="bar">
+        <span><b id="b-mode">—</b></span>
+        <span id="b-count-wrap"><b id="b-count">—</b></span>
+        <span>zoom <b id="b-zoom">—</b></span>
+        <span>dimension <b id="b-dim">1.585</b></span>
+        <span class="busy" id="b-busy" hidden>drawing…</span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas class="base" id="canvas"></canvas>
+      </div>
+
+      <p class="muted" style="margin-top:-0.25rem">
+        Scroll to zoom · drag to pan. In chaos mode the dots accumulate so you can
+        watch the fractal condense out of the randomness; in subdivision mode the
+        depth slider builds it level by level.
+      </p>
+
+      <form class="card" id="controls">
+        <div class="controls-grid">
+          <label>
+            Colour
+            <select id="color">
+              <option value="corner" selected>By corner</option>
+              <option value="solid">Single colour</option>
+            </select>
+          </label>
+
+          <!-- chaos-only controls -->
+          <label class="chaos-ctrl">
+            Points — <b id="pts-val">120k</b>
+            <input type="range" id="points" min="20000" max="600000" step="10000" value="120000" />
+          </label>
+          <label class="chaos-ctrl">
+            Draw speed
+            <select id="speed">
+              <option value="600">Very slow</option>
+              <option value="1500">Slow</option>
+              <option value="4000" selected>Medium</option>
+              <option value="9000">Fast</option>
+              <option value="20000">Turbo</option>
+            </select>
+          </label>
+
+          <!-- subdivision-only control -->
+          <label class="sub-ctrl" hidden>
+            Depth — <b id="depth-val">5</b>
+            <input type="range" id="depth" min="0" max="9" step="1" value="5" />
+          </label>
+        </div>
+        <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
+          <button type="button" class="secondary" id="replay">Replay</button>
+          <button type="button" class="secondary" id="reset-view">Reset view</button>
+          <button type="button" class="secondary" id="save">Save PNG</button>
+        </div>
+      </form>
+
+      <h3>The counting — what removing the middle does</h3>
+      <p class="muted">
+        Each round of subdivision keeps 3 of every 4 quarter-triangles, so the
+        number of triangles triples (<code>3ⁿ</code>) while the filled area shrinks
+        by a quarter each time (<code>(3/4)ⁿ</code>). Push it far enough and the
+        area heads to <strong>zero</strong> even as the boundary grows without
+        bound — a shape with no area but infinite edge. These numbers come straight
+        from <code>logic.py</code>.
+      </p>
+      <div class="card" style="overflow-x:auto">
+        <table id="facts" class="coeff-table">
+          <thead>
+            <tr><th>depth</th><th>triangles (3ⁿ)</th><th>area remaining</th></tr>
+          </thead>
+          <tbody id="facts-rows"></tbody>
+        </table>
+      </div>
+
+      <h3>Route 3 — Pascal's triangle, odd numbers only</h3>
+      <p class="muted">
+        No geometry, no randomness — just arithmetic. Write out Pascal's triangle
+        (every number is the sum of the two above it) and shade only the
+        <strong>odd</strong> entries. The Sierpinski pattern appears on its own.
+        It's the same fractal arriving from number theory, computed by
+        <code>logic.py</code>'s <code>pascal_mod2</code>.
+      </p>
+      <div class="fractal-stage" id="pascal-stage" style="cursor:default;max-width:520px;margin-inline:auto">
+        <canvas class="base" id="pascal" style="background:#0b0d12"></canvas>
+      </div>
+
+      <h3>Why the chaos game can't help but work</h3>
+      <p class="muted">
+        The trick is the half-step. Stepping halfway toward a corner is a
+        <em>contraction</em> — it shrinks distances by half — and the Sierpinski
+        triangle is exactly the shape that is built from three half-size copies of
+        itself, one tucked into each corner. After just a handful of jumps your dot
+        is effectively <em>on</em> the gasket and can never leave it, because every
+        future move lands it inside one of those shrunken copies. The randomness
+        only decides which copy you visit next, so over time the dots paint the
+        whole figure evenly. Each plotted point is a genuine point of the fractal —
+        which is why noise becomes structure.
+      </p>
+
+      <h3>Two routes, one shape — and what a fractal dimension means</h3>
+      <p class="muted">
+        Subdivision is the deterministic builder; the chaos game is its random
+        shadow. Both are the same <strong>Iterated Function System</strong> — the
+        three "shrink toward a corner" maps — so a theorem (Hutchinson, 1981)
+        guarantees they share one and only one limit shape, the
+        <em>attractor</em>. Because the gasket is three copies of itself each
+        scaled by ½, its <strong>similarity dimension</strong> is
+        <code>log 3 / log 2 ≈ 1.585</code>: more than a line, less than a filled
+        area, a number that captures how it fills space the way ordinary
+        dimensions can't.
+      </p>
+
+      <h3>How this page is built</h3>
+      <p class="muted">
+        The math lives in <code>logic.py</code> — the chaos-game step, the
+        recursive subdivision, the triangle/area counting, the similarity
+        dimension, and the Pascal-mod-2 route. The drawing runs in JavaScript
+        (the chaos game plots hundreds of thousands of points, animated so you can
+        watch it form), but the <em>same</em> Python computes the counting table
+        above, so those figures come straight from the source of truth. Try
+        <code>python3 tools/sierpinski-triangle/logic.py</code> to see it print
+        both an ASCII chaos-game gasket and the Pascal version in your terminal.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../barnsley-fern/">Barnsley fern generator</a>
+        <a href="../mandelbrot/">Mandelbrot set explorer</a>
+        <a href="../julia/">Julia set explorer</a>
+        <a href="../newton-fractal/">Newton fractal explorer</a>
+        <a href="../../">all tools &rarr;</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">sierpinski triangle</span>
+        <span class="kw">sierpinski gasket</span>
+        <span class="kw">chaos game</span>
+        <span class="kw">sierpinski triangle generator</span>
+        <span class="kw">recursive subdivision fractal</span>
+        <span class="kw">fractal dimension</span>
+        <span class="kw">self similar fractal</span>
+        <span class="kw">order out of chaos</span>
+        <span class="kw">pascal triangle fractal</span>
+        <span class="kw">iterated function system</span>
+        <span class="kw">interactive fractal</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---- geometry (mirror logic.VERTICES) -----------------------------------
+    const SQ3 = Math.sqrt(3);
+    const V = [
+      [0.0, 1.0],            // apex
+      [-SQ3 / 2, -0.5],      // bottom-left
+      [SQ3 / 2, -0.5],       // bottom-right
+    ];
+    const CORNER_COLORS = [[235, 120, 150], [95, 205, 140], [110, 170, 240]];
+    const SOLID = [120, 205, 235];
+
+    // ---- state --------------------------------------------------------------
+    let pyodide = null;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const stage = document.getElementById('stage');
+
+    let W = 0, H = 0;
+    let mode = 'chaos';
+    let colorMode = 'corner';
+    let target = 120000;     // chaos points
+    let depth = 5;           // subdivision depth
+    let batchSize = 4000;    // chaos points per frame
+    const view = { cx: 0, cy: 0, scale: 0.01 };
+    let fitScale = 0.01;
+
+    // chaos animation
+    let buf = null, fx = 0, fy = 0, plotted = 0, rafId = null;
+
+    const mid = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+    function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
+
+    // ---- world <-> screen ---------------------------------------------------
+    function toScreen(x, y) {
+      return [(x - view.cx) / view.scale + W / 2, H / 2 - (y - view.cy) / view.scale];
+    }
+    function fitBounds() {
+      let xmin = 1e9, xmax = -1e9, ymin = 1e9, ymax = -1e9;
+      for (const [x, y] of V) {
+        if (x < xmin) xmin = x; if (x > xmax) xmax = x;
+        if (y < ymin) ymin = y; if (y > ymax) ymax = y;
+      }
+      const spanX = xmax - xmin, spanY = ymax - ymin;
+      view.cx = (xmin + xmax) / 2; view.cy = (ymin + ymax) / 2;
+      view.scale = Math.max(spanX / (W * 0.9), spanY / (H * 0.9));
+      fitScale = view.scale;
+    }
+
+    // ---- chaos game ---------------------------------------------------------
+    function bgFill() {
+      const d = buf.data;
+      for (let i = 0; i < d.length; i += 4) { d[i] = 11; d[i + 1] = 13; d[i + 2] = 18; d[i + 3] = 255; }
+    }
+    function plotBatch(n) {
+      const d = buf.data, sc = view.scale, halfW = W / 2, halfH = H / 2;
+      for (let i = 0; i < n; i++) {
+        const vi = (Math.random() * 3) | 0;
+        const v = V[vi];
+        fx = (fx + v[0]) / 2; fy = (fy + v[1]) / 2;
+        plotted++;
+        if (plotted < 12) continue;
+        const px = ((fx - view.cx) / sc + halfW) | 0;
+        const py = (halfH - (fy - view.cy) / sc) | 0;
+        if (px < 0 || px >= W || py < 0 || py >= H) continue;
+        const c = colorMode === 'solid' ? SOLID : CORNER_COLORS[vi];
+        const o = (py * W + px) * 4;
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    function frame() {
+      if (plotted < target) {
+        plotBatch(batchSize);
+        ctx.putImageData(buf, 0, 0);
+        updateBar();
+        rafId = requestAnimationFrame(frame);
+      } else {
+        rafId = null;
+        document.getElementById('b-busy').hidden = true;
+        updateBar();
+      }
+    }
+    function startChaos(refit) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (refit) fitBounds();
+      bgFill();
+      ctx.putImageData(buf, 0, 0);
+      // start at the centroid
+      fx = (V[0][0] + V[1][0] + V[2][0]) / 3;
+      fy = (V[0][1] + V[1][1] + V[2][1]) / 3;
+      plotted = 0;
+      document.getElementById('b-busy').hidden = false;
+      rafId = requestAnimationFrame(frame);
+    }
+
+    // ---- subdivision --------------------------------------------------------
+    function buildTriangles(d) {
+      let level = [{ pts: [V[0], V[1], V[2]], branch: 0 }];
+      for (let k = 0; k < d; k++) {
+        const next = [];
+        for (const t of level) {
+          const [a, b, c] = t.pts;
+          const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a);
+          const kids = [[a, ab, ca], [ab, b, bc], [ca, bc, c]];
+          kids.forEach((k2, i) => next.push({ pts: k2, branch: (d === 0 || k > 0) ? t.branch : i }));
+        }
+        level = next;
+      }
+      return level;
+    }
+    function drawSubdivision(refit) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (refit) fitBounds();
+      ctx.fillStyle = '#0b0d12';
+      ctx.fillRect(0, 0, W, H);
+      const tris = buildTriangles(depth);
+      for (const t of tris) {
+        const c = colorMode === 'solid' ? SOLID : CORNER_COLORS[t.branch % 3];
+        ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.beginPath();
+        const p0 = toScreen(t.pts[0][0], t.pts[0][1]);
+        ctx.moveTo(p0[0], p0[1]);
+        for (let i = 1; i < 3; i++) { const p = toScreen(t.pts[i][0], t.pts[i][1]); ctx.lineTo(p[0], p[1]); }
+        ctx.closePath();
+        ctx.fill();
+      }
+      // crisp outline at low depths reads better
+      if (depth <= 6) {
+        ctx.strokeStyle = 'rgba(11,13,18,0.9)';
+        ctx.lineWidth = depth <= 3 ? 1.5 : 0.6;
+        for (const t of tris) {
+          ctx.beginPath();
+          const p0 = toScreen(t.pts[0][0], t.pts[0][1]);
+          ctx.moveTo(p0[0], p0[1]);
+          for (let i = 1; i < 3; i++) { const p = toScreen(t.pts[i][0], t.pts[i][1]); ctx.lineTo(p[0], p[1]); }
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
+      updateBar();
+    }
+
+    // ---- dispatch -----------------------------------------------------------
+    function render(refit) {
+      if (mode === 'chaos') startChaos(refit);
+      else drawSubdivision(refit);
+    }
+
+    // ---- info bar -----------------------------------------------------------
+    function fmtCount(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(n >= 10000000 ? 0 : 1) + 'M';
+      return n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1) + 'k' : '' + n;
+    }
+    function updateBar() {
+      document.getElementById('b-mode').textContent =
+        mode === 'chaos' ? 'Chaos game' : 'Subdivision';
+      const cw = document.getElementById('b-count');
+      if (mode === 'chaos') cw.textContent = fmtCount(Math.max(0, plotted - 12)) + ' points';
+      else cw.textContent = fmtCount(Math.pow(3, depth)) + ' triangles · depth ' + depth;
+      document.getElementById('b-zoom').textContent = (fitScale / view.scale).toFixed(2) + '×';
+    }
+
+    // ---- counting facts table (calls logic.py via Pyodide) ------------------
+    function jsFacts(d) {
+      return { depth: d, triangles: Math.pow(3, d), area_percent: Math.pow(0.75, d) * 100 };
+    }
+    function renderFacts() {
+      const tb = document.getElementById('facts-rows');
+      tb.innerHTML = '';
+      for (let d = 0; d <= 9; d++) {
+        let f;
+        if (pyodide) {
+          try {
+            const proxy = pyodide.runPython(`logic.depth_facts(${d})`);
+            f = proxy.toJs({ dict_converter: Object.fromEntries });
+            proxy.destroy();
+          } catch (e) { f = jsFacts(d); }
+        } else { f = jsFacts(d); }
+        const tr = document.createElement('tr');
+        const tris = f.triangles >= 1e6 ? f.triangles.toLocaleString() : ('' + f.triangles);
+        const area = f.area_percent >= 1 ? f.area_percent.toFixed(1) + '%'
+          : f.area_percent >= 0.01 ? f.area_percent.toFixed(2) + '%'
+          : f.area_percent.toExponential(1) + '%';
+        [d + '', tris, area].forEach((c, i) => {
+          const td = document.createElement('td');
+          td.textContent = c;
+          if (i === 0 && d === depth && mode === 'subdivision') {
+            td.style.color = 'var(--accent)'; td.style.fontWeight = '700';
+          }
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      }
+    }
+
+    // ---- Pascal mod 2 (route 3) ---------------------------------------------
+    function drawPascal() {
+      const cv = document.getElementById('pascal');
+      const stageW = Math.round(document.getElementById('pascal-stage').clientWidth);
+      const rows = 64;
+      const cell = Math.max(2, Math.floor(stageW / rows));
+      const w = cell * rows, h = cell * rows;
+      cv.width = w; cv.height = h;
+      const c2 = cv.getContext('2d');
+      c2.fillStyle = '#0b0d12'; c2.fillRect(0, 0, w, h);
+      let row = [1];
+      for (let r = 0; r < rows; r++) {
+        const offset = (rows - 1 - r) * cell / 2;   // centre the triangle
+        for (let i = 0; i < row.length; i++) {
+          if (row[i] & 1) {
+            const hue = 150 + (r / rows) * 120;       // green -> blue gradient down the rows
+            c2.fillStyle = `hsl(${hue},70%,62%)`;
+            c2.fillRect(offset + i * cell, r * cell, cell - (cell > 3 ? 1 : 0), cell - (cell > 3 ? 1 : 0));
+          }
+        }
+        const nxt = [1];
+        for (let i = 0; i < row.length - 1; i++) nxt.push((row[i] + row[i + 1]) & 1);
+        nxt.push(1);
+        row = nxt;
+      }
+    }
+
+    // ---- view changes -------------------------------------------------------
+    function zoomAt(px, py, factor) {
+      const newScale = view.scale * factor;
+      view.cx += (px - W / 2) * (view.scale - newScale);
+      view.cy -= (py - H / 2) * (view.scale - newScale);
+      view.scale = newScale;
+    }
+
+    // ---- sizing -------------------------------------------------------------
+    function sizeCanvas() {
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 0.92);
+      W = cssW; H = cssH;
+      canvas.width = W; canvas.height = H;
+      buf = ctx.createImageData(W, H);
+    }
+
+    // ---- mode toggle UI -----------------------------------------------------
+    function setModeUI() {
+      document.querySelectorAll('.chip[data-mode]').forEach((b) => {
+        const on = b.dataset.mode === mode;
+        b.style.borderColor = on ? 'var(--accent)' : '';
+        b.style.color = on ? 'var(--accent)' : '';
+        b.style.fontWeight = on ? '700' : '';
+      });
+      document.querySelectorAll('.chaos-ctrl').forEach((el) => { el.hidden = mode !== 'chaos'; });
+      document.querySelectorAll('.sub-ctrl').forEach((el) => { el.hidden = mode !== 'subdivision'; });
+    }
+
+    // ---- events -------------------------------------------------------------
+    let drag = null;
+    stage.addEventListener('pointerdown', (e) => {
+      stage.setPointerCapture(e.pointerId);
+      drag = { sx: e.offsetX, sy: e.offsetY, dx: 0, dy: 0, moved: false };
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      drag.dx = e.offsetX - drag.sx; drag.dy = e.offsetY - drag.sy;
+      if (Math.abs(drag.dx) + Math.abs(drag.dy) > 4) { drag.moved = true; stage.classList.add('grabbing'); }
+    });
+    stage.addEventListener('pointerup', () => {
+      stage.classList.remove('grabbing');
+      if (drag && drag.moved) {
+        view.cx -= drag.dx * view.scale;
+        view.cy += drag.dy * view.scale;
+        render(false);
+      }
+      drag = null;
+    });
+    stage.addEventListener('pointercancel', () => { drag = null; stage.classList.remove('grabbing'); });
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 0.8 : 1.25);
+      render(false);
+    }, { passive: false });
+
+    document.querySelectorAll('.chip[data-mode]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        mode = chip.dataset.mode;
+        setModeUI();
+        render(true);
+        renderFacts();
+      });
+    });
+    document.getElementById('color').addEventListener('change', (e) => { colorMode = e.target.value; render(false); });
+    document.getElementById('speed').addEventListener('change', (e) => {
+      batchSize = parseInt(e.target.value, 10);
+      if (mode === 'chaos' && !rafId && plotted < target) {
+        document.getElementById('b-busy').hidden = false; rafId = requestAnimationFrame(frame);
+      }
+    });
+    document.getElementById('points').addEventListener('input', (e) => {
+      target = parseInt(e.target.value, 10);
+      document.getElementById('pts-val').textContent = fmtCount(target);
+      if (mode === 'chaos' && !rafId && plotted < target) {
+        document.getElementById('b-busy').hidden = false; rafId = requestAnimationFrame(frame);
+      }
+    });
+    document.getElementById('depth').addEventListener('input', (e) => {
+      depth = parseInt(e.target.value, 10);
+      document.getElementById('depth-val').textContent = depth;
+      if (mode === 'subdivision') { drawSubdivision(false); renderFacts(); }
+    });
+    document.getElementById('replay').addEventListener('click', () => render(false));
+    document.getElementById('reset-view').addEventListener('click', () => render(true));
+    document.getElementById('save').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.download = 'sierpinski-triangle.png'; a.href = canvas.toDataURL('image/png'); a.click();
+    });
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { sizeCanvas(); render(true); drawPascal(); }, 150);
+    });
+
+    // ---- boot ---------------------------------------------------------------
+    async function init() {
+      sizeCanvas();
+      setModeUI();
+      render(true);          // first draw is pure JS, instant
+      renderFacts();         // JS facts until Python is ready
+      drawPascal();
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      renderFacts();         // now backed by logic.py
+    }
+    init();
+  </script>
+</body>
+</html>
