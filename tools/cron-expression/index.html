@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cron Expression Explainer — Describe &amp; Test Cron Schedules | 1618.dev</title>
+  <meta name="description" content="Free online cron expression parser. Translate any crontab schedule into plain English and see the next run times. Supports ranges, steps, lists, names, and @daily-style macros. Runs in your browser." />
+  <meta name="keywords" content="cron expression, crontab, cron parser, cron explainer, cron to english, cron schedule, crontab generator, cron next run, cron tester, explain cron, cron syntax, cron job schedule, crontab guru, cron calculator, online cron" />
+  <link rel="canonical" href="https://1618.dev/tools/cron-expression/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Cron Expression Explainer — Describe &amp; Test Cron Schedules | 1618.dev" />
+  <meta property="og:description" content="Translate any crontab expression into plain English and preview the next run times. Supports ranges, steps, lists, names, and macros. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/cron-expression/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Cron Expression Explainer — 1618.dev" />
+  <meta name="twitter:description" content="Explain any cron expression in plain English and see the next run times. Free, nothing uploaded." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Cron Expression Explainer",
+    "description": "Free online cron expression parser that translates any crontab schedule into plain English and shows the next run times. Supports ranges, steps, lists, names, and @daily-style macros. Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/cron-expression/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* Cron tool: a big monospace expression field, a plain-English readout,
+       a per-field breakdown table and a list of upcoming runs. */
+    .cron-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.25rem;
+      letter-spacing: 0.04em;
+      width: 100%;
+    }
+    .summary {
+      font-size: 1.2rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .summary .label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+    }
+    .macro-note { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; }
+    .macro-note code,
+    .cron-table td.raw { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .cron-table td.raw { color: var(--accent); }
+    .runs { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+    .runs li {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    .runs li:last-child { border-bottom: 0; }
+    .runs .when { color: var(--muted); font-size: 0.9rem; }
+    .error {
+      color: #c0392b;
+      font-size: 0.95rem;
+      margin: 0.5rem 0 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      .error { color: #ff8a80; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Cron expression explainer</h2>
+      <p class="muted">Paste a cron (crontab) schedule and get it back in plain English, with a field-by-field breakdown and the next few times it will run. Supports lists, ranges, steps, month/weekday names, and <code>@daily</code>-style macros. Everything runs in your browser — nothing is uploaded.</p>
+
+      <form id="form" class="card" autocomplete="off">
+        <label>
+          Cron expression
+          <input id="expr" class="cron-input" type="text" spellcheck="false"
+                 autocapitalize="off" value="*/15 9-17 * * 1-5" />
+        </label>
+        <p class="muted" style="margin:0.25rem 0 0; font-size:0.8rem">
+          minute&nbsp;&nbsp;hour&nbsp;&nbsp;day-of-month&nbsp;&nbsp;month&nbsp;&nbsp;day-of-week
+        </p>
+
+        <div class="chips" style="margin-top:1rem">
+          <button type="button" class="chip" data-expr="* * * * *">every minute</button>
+          <button type="button" class="chip" data-expr="*/5 * * * *">every 5 min</button>
+          <button type="button" class="chip" data-expr="0 * * * *">hourly</button>
+          <button type="button" class="chip" data-expr="0 9 * * 1-5">9am weekdays</button>
+          <button type="button" class="chip" data-expr="30 2 * * *">2:30am daily</button>
+          <button type="button" class="chip" data-expr="0 0 1 * *">1st of month</button>
+          <button type="button" class="chip" data-expr="0 0 * * 0">Sunday midnight</button>
+          <button type="button" class="chip" data-expr="@daily">@daily</button>
+        </div>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="summary">
+            <span class="label">In plain English</span>
+            <span id="summary-text">—</span>
+          </div>
+          <p id="macro-note" class="macro-note" hidden></p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">Field breakdown</h3>
+          <table class="cron-table">
+            <thead>
+              <tr><th>Field</th><th>Value</th><th>Meaning</th></tr>
+            </thead>
+            <tbody id="fields-body"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">Next runs</h3>
+          <ul id="runs" class="runs"></ul>
+          <p class="muted" style="font-size:0.8rem; margin:0.75rem 0 0">
+            Computed in your local time, from your device clock now.
+          </p>
+        </div>
+      </div>
+
+      <h3>How cron expressions work</h3>
+      <p class="muted">
+        A cron schedule is five fields separated by spaces:
+        <b>minute</b> (0–59), <b>hour</b> (0–23), <b>day of month</b> (1–31),
+        <b>month</b> (1–12 or <code>JAN</code>–<code>DEC</code>), and
+        <b>day of week</b> (0–6 or <code>SUN</code>–<code>SAT</code>, where both
+        0 and 7 mean Sunday). A job runs whenever the current time matches all
+        of them.
+      </p>
+      <p class="muted">
+        Each field accepts <code>*</code> (every value), a single number, a
+        list (<code>1,15,30</code>), a range (<code>9-17</code>), and a step
+        (<code>*/15</code> = every 15th, or <code>9-17/2</code> = every other
+        value across a range). Macros like <code>@hourly</code>,
+        <code>@daily</code>, <code>@weekly</code>, <code>@monthly</code> and
+        <code>@yearly</code> are shorthands for common schedules.
+      </p>
+      <p class="muted">
+        One classic gotcha: when <b>both</b> the day-of-month and day-of-week
+        fields are restricted (neither is <code>*</code>), the job runs when
+        <b>either</b> matches — not both. So <code>0 0 1 * 1</code> fires on the
+        1st of every month <i>and</i> on every Monday. This tool follows that
+        Vixie-cron rule.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../uuid-generator/">UUID generator</a>
+        <a href="../json-formatter/">JSON formatter</a>
+        <a href="../base64/">Base64 encoder / decoder</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">cron expression</span>
+        <span class="kw">crontab</span>
+        <span class="kw">cron parser</span>
+        <span class="kw">cron to english</span>
+        <span class="kw">explain cron</span>
+        <span class="kw">cron schedule</span>
+        <span class="kw">cron next run</span>
+        <span class="kw">cron tester</span>
+        <span class="kw">crontab generator</span>
+        <span class="kw">cron syntax</span>
+        <span class="kw">cron job schedule</span>
+        <span class="kw">online cron</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide, ready = false;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      ready = true;
+      calculate();
+    }
+
+    // Local "now" as an ISO string without a timezone, so Python reads it as
+    // naive local time and the next-run results come back in local time too.
+    function localNowIso() {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` +
+             `T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+
+    function formatRun(iso) {
+      const d = new Date(iso);
+      const date = d.toLocaleDateString(undefined,
+        { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString(undefined,
+        { hour: '2-digit', minute: '2-digit' });
+      // "in N days" style relative hint
+      const days = Math.round((d - new Date()) / 86400000);
+      let rel = 'today';
+      if (days === 1) rel = 'tomorrow';
+      else if (days > 1) rel = `in ${days} days`;
+      return { main: `${date}, ${time}`, when: rel };
+    }
+
+    function calculate() {
+      if (!ready) return;
+      const errEl = document.getElementById('error');
+      const outEl = document.getElementById('output');
+      const expr = document.getElementById('expr').value.trim();
+
+      if (!expr) { errEl.hidden = true; outEl.hidden = true; return; }
+
+      pyodide.globals.set('expr', expr);
+      pyodide.globals.set('from_iso', localNowIso());
+
+      let data;
+      try {
+        const json = pyodide.runPython('logic.explain_json(expr, from_iso, 6)');
+        data = JSON.parse(json);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        outEl.hidden = true;
+        return;
+      }
+
+      errEl.hidden = true;
+      document.getElementById('summary-text').textContent = data.description;
+
+      const note = document.getElementById('macro-note');
+      if (data.macro) {
+        note.innerHTML = `Macro <code>${data.macro}</code> expands to <code>${data.normalized}</code>.`;
+        note.hidden = false;
+      } else {
+        note.hidden = true;
+      }
+
+      const body = document.getElementById('fields-body');
+      body.innerHTML = '';
+      for (const f of data.fields) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${f.label}</td><td class="raw">${f.raw}</td><td>${f.text}</td>`;
+        body.appendChild(tr);
+      }
+
+      const runs = document.getElementById('runs');
+      runs.innerHTML = '';
+      if (data.next_runs.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No runs in the next 5 years — is this date reachable?';
+        runs.appendChild(li);
+      } else {
+        for (const iso of data.next_runs) {
+          const { main, when } = formatRun(iso);
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${main}</span><span class="when">${when}</span>`;
+          runs.appendChild(li);
+        }
+      }
+
+      outEl.hidden = false;
+    }
+
+    document.getElementById('expr').addEventListener('input', calculate);
+    document.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('expr').value = btn.dataset.expr;
+        calculate();
+      });
+    });
+    document.getElementById('form').addEventListener('submit', e => e.preventDefault());
+    init();
+  </script>
+</body>
+</html>
