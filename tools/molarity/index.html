@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Molarity Calculator — Concentration, Moles, Mass &amp; Dilution | 1618.dev</title>
+  <meta name="description" content="Free molarity calculator for chemistry. Find molarity from mass, the grams to prepare a solution, solve c = n/V, or work out dilutions (C1V1 = C2V2). Type a formula like NaCl and it computes the molar mass. Runs in your browser." />
+  <meta name="keywords" content="molarity calculator, molar concentration, moles to molarity, mass to molarity, molarity to mass, dilution calculator, c1v1 c2v2, molar mass calculator, molar mass from formula, concentration calculator, solution chemistry, grams to make a solution, mol/L calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/molarity/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Molarity Calculator — Concentration, Moles, Mass &amp; Dilution | 1618.dev" />
+  <meta property="og:description" content="Molarity from mass, grams to prepare a solution, c = n/V, and dilutions. Type a formula like NaCl for its molar mass. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/molarity/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Molarity Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Molarity, moles, mass, and dilution — with molar mass from a chemical formula. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Molarity Calculator",
+    "description": "Free molarity calculator: find molarity from mass, the grams needed to prepare a solution, solve c = n/V, and compute dilutions (C1V1 = C2V2). Computes molar mass from a chemical formula.",
+    "url": "https://1618.dev/tools/molarity/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    .vol-row { display: flex; gap: 0.5rem; }
+    .vol-row input { flex: 1 1 auto; }
+    .vol-row select { flex: 0 0 auto; width: auto; }
+    .mm-hint, .blank-hint { font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0; }
+    .dilution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
+    .dilution-grid .full { grid-column: 1 / -1; }
+    .breakdown { font-variant-numeric: tabular-nums; }
+    .note {
+      margin-top: 0.75rem; padding: 0.6rem 0.8rem; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--border); font-size: 0.9rem;
+    }
+    .fchips { margin-top: 0.4rem; }
+    .error { color: #c0392b; font-size: 0.95rem; margin: 0.5rem 0 0; }
+    @media (prefers-color-scheme: dark) { .error { color: #ff8a80; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Molarity calculator</h2>
+      <p class="muted">Find the molarity of a solution from mass, work out how many grams to weigh for a target concentration, solve the c&nbsp;=&nbsp;n/V triangle, or plan a dilution. The molar-mass box accepts a chemical formula like <code>NaCl</code> or <code>CuSO4·5H2O</code> — it works out the molar mass for you. Everything runs in your browser.</p>
+
+      <form id="form" class="card">
+        <label>
+          What do you want to find?
+          <select id="mode">
+            <option value="mass-to-molarity" selected>Molarity from mass dissolved</option>
+            <option value="molarity-to-mass">Mass to prepare a solution</option>
+            <option value="cnv">Molarity / moles / volume (c = n/V)</option>
+            <option value="dilution">Dilution (C₁V₁ = C₂V₂)</option>
+            <option value="molar-mass">Molar mass from a formula</option>
+          </select>
+        </label>
+
+        <p id="blank-hint" class="blank-hint" hidden>Leave exactly one field blank — that's the one solved for.</p>
+
+        <label id="field-formula" hidden>
+          Chemical formula
+          <input type="text" id="formula" value="C6H12O6" spellcheck="false" autocapitalize="off" />
+          <div class="chips fchips">
+            <button type="button" class="chip" data-formula="H2O">H₂O</button>
+            <button type="button" class="chip" data-formula="NaCl">NaCl</button>
+            <button type="button" class="chip" data-formula="C6H12O6">glucose</button>
+            <button type="button" class="chip" data-formula="Ca(OH)2">Ca(OH)₂</button>
+            <button type="button" class="chip" data-formula="CuSO4·5H2O">CuSO₄·5H₂O</button>
+          </div>
+        </label>
+
+        <label id="field-molarity" hidden>
+          Molarity (mol/L)
+          <input type="number" id="molarity" value="0.1" min="0" step="any" />
+        </label>
+
+        <label id="field-moles" hidden>
+          Moles (mol)
+          <input type="number" id="moles" value="0.5" min="0" step="any" />
+        </label>
+
+        <label id="field-mass" hidden>
+          Mass of solute (g)
+          <input type="number" id="mass" value="58.44" min="0" step="any" />
+        </label>
+
+        <label id="field-molar-mass" hidden>
+          Molar mass (g/mol) — or a formula
+          <input type="text" id="molar-mass" value="NaCl" spellcheck="false" autocapitalize="off" />
+          <p class="mm-hint">Type a number (e.g. <code>58.44</code>) or a formula (e.g. <code>NaCl</code>).</p>
+        </label>
+
+        <label id="field-volume" hidden>
+          Volume of solution
+          <span class="vol-row">
+            <input type="number" id="volume" value="500" min="0" step="any" />
+            <select id="volume-unit">
+              <option value="mL" selected>mL</option>
+              <option value="L">L</option>
+              <option value="µL">µL</option>
+            </select>
+          </span>
+        </label>
+
+        <div id="field-dilution" hidden>
+          <div class="dilution-grid">
+            <label>
+              Stock conc. C₁ (mol/L)
+              <input type="number" id="c1" value="1" min="0" step="any" />
+            </label>
+            <label>
+              Stock volume V₁
+              <span class="vol-row">
+                <input type="number" id="v1" placeholder="leave blank" min="0" step="any" />
+                <select id="v1-unit"><option value="mL" selected>mL</option><option value="L">L</option></select>
+              </span>
+            </label>
+            <label>
+              Final conc. C₂ (mol/L)
+              <input type="number" id="c2" value="0.1" min="0" step="any" />
+            </label>
+            <label>
+              Final volume V₂
+              <span class="vol-row">
+                <input type="number" id="v2" value="500" min="0" step="any" />
+                <select id="v2-unit"><option value="mL" selected>mL</option><option value="L">L</option></select>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" id="go" disabled>Loading Python&hellip;</button>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="r-label">Result</span>
+            <span id="r-value">&mdash;</span>
+          </div>
+          <p id="r-note" class="note" hidden></p>
+          <table id="r-details" style="margin-top:1rem" hidden>
+            <tbody></tbody>
+          </table>
+          <table id="r-breakdown" class="breakdown" style="margin-top:1rem" hidden>
+            <thead>
+              <tr><th>Element</th><th>Count</th><th>Atomic weight</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>How it works</h3>
+      <div class="formula">molarity (mol/L) = moles of solute &divide; volume of solution (L)</div>
+      <div class="formula" style="margin-top:0.4rem">moles = mass (g) &divide; molar mass (g/mol)</div>
+      <div class="formula" style="margin-top:0.4rem">dilution: C₁ &times; V₁ = C₂ &times; V₂</div>
+      <p class="muted" style="margin-top:0.6rem">
+        <b>Molarity</b> (M, mol/L) is the number of moles of solute per litre of
+        <i>solution</i> — not per litre of solvent. To get moles from a mass,
+        divide by the molar mass; this tool can read the molar mass straight off
+        a chemical formula, adding up the standard atomic weights of each element
+        (so <code>NaCl</code> → 58.44 g/mol).
+      </p>
+      <p class="muted" style="margin-top:0.4rem">
+        <b>Dilution</b> keeps the moles of solute constant while you add solvent,
+        so C₁V₁&nbsp;=&nbsp;C₂V₂. Solve for V₁ to find how much concentrated
+        stock to measure out, then top up to the final volume V₂. You can only
+        dilute, never concentrate, so C₂ must be lower than C₁.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../ph-acid-base/">pH / acid-base</a>
+        <a href="../speed-distance-time/">Speed / distance / time</a>
+        <a href="../../">&larr; all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">molarity calculator</span>
+        <span class="kw">molar concentration</span>
+        <span class="kw">mass to molarity</span>
+        <span class="kw">moles to molarity</span>
+        <span class="kw">molarity to mass</span>
+        <span class="kw">dilution calculator</span>
+        <span class="kw">c1v1 c2v2</span>
+        <span class="kw">molar mass calculator</span>
+        <span class="kw">molar mass from formula</span>
+        <span class="kw">concentration calculator</span>
+        <span class="kw">solution chemistry</span>
+        <span class="kw">mol/L calculator</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+    }
+
+    // mode -> field blocks to show, plus whether the "leave one blank" hint shows
+    const MODES = {
+      'mass-to-molarity': { fields: ['field-mass', 'field-molar-mass', 'field-volume'], blank: false },
+      'molarity-to-mass': { fields: ['field-molarity', 'field-volume', 'field-molar-mass'], blank: false },
+      'cnv':              { fields: ['field-molarity', 'field-moles', 'field-volume'], blank: true },
+      'dilution':         { fields: ['field-dilution'], blank: true },
+      'molar-mass':       { fields: ['field-formula'], blank: false },
+    };
+    const ALL_FIELDS = ['field-formula', 'field-molarity', 'field-moles',
+      'field-mass', 'field-molar-mass', 'field-volume', 'field-dilution'];
+
+    function v(id) { return document.getElementById(id).value; }
+
+    function buildPayload(mode) {
+      switch (mode) {
+        case 'mass-to-molarity':
+          return { mass: v('mass'), molar_mass: v('molar-mass'),
+                   volume: v('volume'), volume_unit: v('volume-unit') };
+        case 'molarity-to-mass':
+          return { molarity: v('molarity'), molar_mass: v('molar-mass'),
+                   volume: v('volume'), volume_unit: v('volume-unit') };
+        case 'cnv':
+          return { molarity: v('molarity'), moles: v('moles'),
+                   volume: v('volume'), volume_unit: v('volume-unit') };
+        case 'dilution':
+          return { c1: v('c1'), v1: v('v1'), v1_unit: v('v1-unit'),
+                   c2: v('c2'), v2: v('v2'), v2_unit: v('v2-unit') };
+        case 'molar-mass':
+          return { formula: v('formula') };
+      }
+    }
+
+    // For the c=n/V mode, blank the field being solved for so the user starts
+    // from a clean slate.
+    function updateMode() {
+      const mode = document.getElementById('mode').value;
+      const cfg = MODES[mode];
+      for (const id of ALL_FIELDS) {
+        document.getElementById(id).hidden = !cfg.fields.includes(id);
+      }
+      document.getElementById('blank-hint').hidden = !cfg.blank;
+      document.getElementById('output').hidden = true;
+      document.getElementById('error').hidden = true;
+    }
+
+    function fmt(x) {
+      if (!Number.isFinite(x)) return '—';
+      if (x === 0) return '0';
+      const ax = Math.abs(x);
+      if (ax < 1e-4 || ax >= 1e6) return x.toExponential(3);
+      // ~4 significant figures, trailing zeros trimmed
+      const digits = Math.max(0, 3 - Math.floor(Math.log10(ax)));
+      return parseFloat(x.toFixed(digits)).toString();
+    }
+
+    function render(data) {
+      document.getElementById('r-label').textContent = data.result.label;
+      document.getElementById('r-value').textContent =
+        `${fmt(data.result.value)} ${data.result.unit}`;
+
+      const noteEl = document.getElementById('r-note');
+      if (data.note) { noteEl.textContent = data.note; noteEl.hidden = false; }
+      else noteEl.hidden = true;
+
+      const det = document.getElementById('r-details');
+      const detBody = det.querySelector('tbody');
+      detBody.innerHTML = '';
+      if (data.details && data.details.length) {
+        for (const d of data.details) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${d.label}</td><td style="font-variant-numeric:tabular-nums">${fmt(d.value)} ${d.unit}</td>`;
+          detBody.appendChild(tr);
+        }
+        det.hidden = false;
+      } else det.hidden = true;
+
+      const bd = document.getElementById('r-breakdown');
+      const bdBody = bd.querySelector('tbody');
+      bdBody.innerHTML = '';
+      if (data.breakdown && data.breakdown.length) {
+        for (const row of data.breakdown) {
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            `<td>${row.element}</td><td>${row.count}</td>` +
+            `<td>${row.weight}</td><td>${fmt(row.subtotal)} g/mol</td>`;
+          bdBody.appendChild(tr);
+        }
+        bd.hidden = false;
+      } else bd.hidden = true;
+
+      document.getElementById('output').hidden = false;
+    }
+
+    function calculate(e) {
+      e.preventDefault();
+      const mode = document.getElementById('mode').value;
+      const errEl = document.getElementById('error');
+      pyodide.globals.set('mode', mode);
+      pyodide.globals.set('payload', JSON.stringify(buildPayload(mode)));
+      try {
+        const json = pyodide.runPython('logic.solve_json(mode, payload)');
+        render(JSON.parse(json));
+        errEl.hidden = true;
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        document.getElementById('output').hidden = true;
+      }
+    }
+
+    document.getElementById('mode').addEventListener('change', updateMode);
+    document.getElementById('form').addEventListener('submit', calculate);
+    document.querySelectorAll('.fchips .chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('formula').value = btn.dataset.formula;
+      });
+    });
+    updateMode();
+    init();
+  </script>
+</body>
+</html>
