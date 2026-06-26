@@ -69,6 +69,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Base64 encoder / decoder](tools/base64/) — encode text to Base64 or decode it back, with standard or URL-safe alphabet, full UTF-8 support, and tolerant decoding
 - [UUID generator](tools/uuid-generator/) — generate random v4, time-ordered v7, or legacy v1 UUIDs in bulk, with uppercase and hyphen-free formatting options
 - [Cron expression explainer](tools/cron-expression/) — translate a crontab schedule into plain English, with a field-by-field breakdown and the next run times; supports ranges, steps, lists, month/weekday names, and @daily-style macros
+- [Color converter](tools/color-converter/) — convert a color between HEX, RGB, HSL, HSV and CMYK, and check the WCAG contrast ratio between two colors with AA/AAA pass-fail verdicts
 
 ## Run locally
 

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Converter — HEX, RGB, HSL &amp; WCAG Contrast | 1618.dev</title>
+  <meta name="description" content="Free online color converter. Translate any color between HEX, RGB, HSL, HSV and CMYK, and check the WCAG contrast ratio between two colors with AA/AAA pass-fail. Runs entirely in your browser." />
+  <meta name="keywords" content="color converter, hex to rgb, rgb to hex, hex to hsl, rgb to hsl, hsl to rgb, color picker, color code converter, cmyk converter, hsv converter, wcag contrast checker, color contrast ratio, accessibility contrast, hex color, css color converter" />
+  <link rel="canonical" href="https://1618.dev/tools/color-converter/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Color Converter — HEX, RGB, HSL &amp; WCAG Contrast | 1618.dev" />
+  <meta property="og:description" content="Convert colors between HEX, RGB, HSL, HSV and CMYK, and check WCAG contrast with AA/AAA verdicts. Free, runs in your browser." />
+  <meta property="og:url" content="https://1618.dev/tools/color-converter/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Color Converter — 1618.dev" />
+  <meta name="twitter:description" content="Convert HEX/RGB/HSL/HSV/CMYK and check WCAG contrast. Free, nothing uploaded." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Color Converter",
+    "description": "Free online color converter between HEX, RGB, HSL, HSV and CMYK, with a WCAG contrast-ratio checker (AA/AAA verdicts for normal and large text). Runs entirely in your browser.",
+    "url": "https://1618.dev/tools/color-converter/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    /* Color tool: a big swatch beside an any-format input, a grid of copyable
+       format rows, and a live WCAG contrast checker. */
+    .color-row {
+      display: flex;
+      gap: 1rem;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 7rem;
+      min-height: 7rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      flex: 0 0 auto;
+      /* checkerboard so alpha is visible */
+      background-image:
+        linear-gradient(45deg, #ccc 25%, transparent 25%),
+        linear-gradient(-45deg, #ccc 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ccc 75%),
+        linear-gradient(-45deg, transparent 75%, #ccc 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .swatch span {
+      position: absolute; inset: 0;
+      border-radius: 7px;
+    }
+    .color-row .grow { flex: 1 1 14rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .mono-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.15rem;
+    }
+    .picker-line { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--muted); }
+    input[type="color"] {
+      width: 2.6rem; height: 2.2rem; padding: 0; border: 1px solid var(--border);
+      border-radius: 6px; background: none; cursor: pointer;
+    }
+    .formats { display: grid; grid-template-columns: max-content 1fr max-content; gap: 0.5rem 1rem; align-items: center; margin-top: 0.25rem; }
+    .formats .fmt-label { color: var(--muted); font-size: 0.85rem; }
+    .formats .fmt-val {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem; word-break: break-all;
+    }
+    .copy-btn {
+      font-size: 0.75rem; padding: 0.2rem 0.6rem; background: transparent;
+      color: var(--fg); border: 1px solid var(--border); border-radius: 999px; white-space: nowrap;
+    }
+    .copy-btn:hover { border-color: var(--accent); }
+
+    .contrast-inputs { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .contrast-inputs label { flex: 1 1 10rem; }
+    .preview {
+      border-radius: 8px; padding: 1.25rem; margin-top: 1rem; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .preview .big { font-size: 1.5rem; font-weight: 700; }
+    .preview .small { font-size: 0.95rem; }
+    .ratio { font-size: 2.1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .ratio .label {
+      display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.35rem;
+    }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .badge {
+      font-size: 0.8rem; padding: 0.3rem 0.7rem; border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .badge.pass { background: #e6f4ea; color: #1e7e34; border-color: #b7dfc1; }
+    .badge.fail { background: #fdecea; color: #c0392b; border-color: #f5c2bd; }
+    @media (prefers-color-scheme: dark) {
+      .badge.pass { background: #14331f; color: #7ee2a0; border-color: #245b38; }
+      .badge.fail { background: #3a1a17; color: #ff8a80; border-color: #6b2b26; }
+    }
+    .error { color: #c0392b; font-size: 0.95rem; margin: 0.5rem 0 0; }
+    @media (prefers-color-scheme: dark) { .error { color: #ff8a80; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Color converter</h2>
+      <p class="muted">Type a color in any format — HEX, RGB, HSL, or a CSS name like <code>tomato</code> — and get it back in every format, ready to copy. Then check the WCAG contrast between two colors. Everything runs in your browser — nothing is uploaded.</p>
+
+      <form id="form" class="card" autocomplete="off">
+        <div class="color-row">
+          <div class="swatch"><span id="swatch-fill"></span></div>
+          <div class="grow">
+            <label>
+              Color
+              <input id="color-in" class="mono-input" type="text" spellcheck="false"
+                     autocapitalize="off" value="#1e90ff" />
+            </label>
+            <div class="picker-line">
+              <input id="picker" type="color" value="#1e90ff" aria-label="Color picker" />
+              <span id="picker-name">pick a color, or type any format above</span>
+            </div>
+          </div>
+        </div>
+
+        <p id="error" class="error" hidden></p>
+
+        <div id="formats" class="formats" hidden></div>
+      </form>
+
+      <div class="card">
+        <h3 style="margin-top:0">Contrast checker (WCAG)</h3>
+        <p class="muted" style="margin-top:0">Check whether text is readable on its background. AA is the baseline standard; AAA is enhanced.</p>
+        <div class="contrast-inputs">
+          <label>
+            Text color
+            <input id="fg-in" class="mono-input" type="text" spellcheck="false"
+                   autocapitalize="off" value="#777777" />
+          </label>
+          <label>
+            Background
+            <input id="bg-in" class="mono-input" type="text" spellcheck="false"
+                   autocapitalize="off" value="#ffffff" />
+          </label>
+        </div>
+        <p id="contrast-error" class="error" hidden></p>
+
+        <div id="contrast-out" hidden>
+          <div class="preview" id="preview">
+            <div class="big">Almost before we knew it</div>
+            <div class="small">we had left the ground — large and normal text preview.</div>
+          </div>
+          <div class="ratio" style="margin-top:1rem">
+            <span class="label">Contrast ratio</span>
+            <span id="ratio-val">—</span><span style="font-size:1rem; color:var(--muted)">:1</span>
+          </div>
+          <div class="badges" id="badges"></div>
+        </div>
+      </div>
+
+      <h3>Color formats, briefly</h3>
+      <p class="muted">
+        <b>HEX</b> and <b>RGB</b> describe a color by its red, green, and blue
+        channels — the same thing in two notations (an 8-digit hex or a 4th RGB
+        value adds alpha/opacity). <b>HSL</b> (hue, saturation, lightness) and
+        <b>HSV/HSB</b> (… value/brightness) are friendlier for picking and
+        adjusting colors by eye. <b>CMYK</b> is the subtractive model used for
+        print. This tool round-trips between all of them.
+      </p>
+      <p class="muted">
+        The <b>contrast ratio</b> ranges from 1:1 (identical) to 21:1 (black on
+        white). WCAG asks for at least <b>4.5:1</b> for normal text and
+        <b>3:1</b> for large text (AA), or <b>7:1</b> and <b>4.5:1</b> for the
+        stricter AAA level. Large means roughly 18pt, or 14pt bold.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../cron-expression/">Cron explainer</a>
+        <a href="../base64/">Base64 encoder / decoder</a>
+        <a href="../json-formatter/">JSON formatter</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">color converter</span>
+        <span class="kw">hex to rgb</span>
+        <span class="kw">rgb to hex</span>
+        <span class="kw">hex to hsl</span>
+        <span class="kw">rgb to hsl</span>
+        <span class="kw">hsl to rgb</span>
+        <span class="kw">cmyk converter</span>
+        <span class="kw">hsv converter</span>
+        <span class="kw">wcag contrast checker</span>
+        <span class="kw">color contrast ratio</span>
+        <span class="kw">accessibility contrast</span>
+        <span class="kw">css color converter</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide, ready = false;
+
+    const FORMAT_ROWS = [
+      ["HEX", "hex"], ["RGB", "rgb"], ["HSL", "hsl"],
+      ["HSV", "hsv"], ["CMYK", "cmyk"],
+    ];
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      ready = true;
+      convert();
+      checkContrast();
+    }
+
+    function pyCall(expr, ...args) {
+      args.forEach((a, i) => pyodide.globals.set(`_a${i}`, a));
+      const call = `logic.${expr}(${args.map((_, i) => `_a${i}`).join(', ')})`;
+      return JSON.parse(pyodide.runPython(call));
+    }
+
+    function convert() {
+      if (!ready) return;
+      const errEl = document.getElementById('error');
+      const fmtEl = document.getElementById('formats');
+      const text = document.getElementById('color-in').value;
+
+      let data;
+      try {
+        data = pyCall('convert_json', text);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        fmtEl.hidden = true;
+        return;
+      }
+      errEl.hidden = true;
+
+      // swatch + native picker mirror the parsed color
+      document.getElementById('swatch-fill').style.background =
+        `rgba(${data.r}, ${data.g}, ${data.b}, ${data.a})`;
+      document.getElementById('picker').value = data.hex6;
+      document.getElementById('picker-name').textContent =
+        data.name ? `CSS name: ${data.name}` : 'no exact CSS name';
+
+      fmtEl.innerHTML = '';
+      for (const [label, key] of FORMAT_ROWS) {
+        const val = data[key];
+        const lbl = document.createElement('span');
+        lbl.className = 'fmt-label'; lbl.textContent = label;
+        const v = document.createElement('span');
+        v.className = 'fmt-val'; v.textContent = val;
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'copy-btn'; btn.textContent = 'Copy';
+        btn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(val); } catch (e) {}
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1200);
+        });
+        fmtEl.append(lbl, v, btn);
+      }
+      fmtEl.hidden = false;
+    }
+
+    const BADGES = [
+      ["AA — normal text", "aa_normal"],
+      ["AA — large text", "aa_large"],
+      ["AAA — normal text", "aaa_normal"],
+      ["AAA — large text", "aaa_large"],
+    ];
+
+    function checkContrast() {
+      if (!ready) return;
+      const errEl = document.getElementById('contrast-error');
+      const outEl = document.getElementById('contrast-out');
+      const fg = document.getElementById('fg-in').value;
+      const bg = document.getElementById('bg-in').value;
+
+      let data;
+      try {
+        data = pyCall('contrast_json', fg, bg);
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        outEl.hidden = true;
+        return;
+      }
+      errEl.hidden = true;
+
+      document.getElementById('ratio-val').textContent = data.ratio.toFixed(2);
+      const prev = document.getElementById('preview');
+      prev.style.color = data.fg_hex;
+      prev.style.background = data.bg_hex;
+
+      const badgesEl = document.getElementById('badges');
+      badgesEl.innerHTML = '';
+      for (const [label, key] of BADGES) {
+        const ok = data.levels[key];
+        const b = document.createElement('span');
+        b.className = 'badge ' + (ok ? 'pass' : 'fail');
+        b.textContent = (ok ? '✓ ' : '✗ ') + label;
+        badgesEl.appendChild(b);
+      }
+      outEl.hidden = false;
+    }
+
+    document.getElementById('color-in').addEventListener('input', convert);
+    document.getElementById('picker').addEventListener('input', e => {
+      document.getElementById('color-in').value = e.target.value;
+      convert();
+    });
+    document.getElementById('fg-in').addEventListener('input', checkContrast);
+    document.getElementById('bg-in').addEventListener('input', checkContrast);
+    document.getElementById('form').addEventListener('submit', e => e.preventDefault());
+    init();
+  </script>
+</body>
+</html>
