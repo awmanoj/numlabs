@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Retirement Corpus Calculator — Lump Sum to Invest Today | 1618.dev</title>
+  <meta name="description" content="Find the lump sum to invest today for a target monthly retirement income. Set equity/debt returns, inflation, and pre/post-retirement equity split. Year-by-year breakdown of portfolio, returns and withdrawals, with a chart. India defaults." />
+  <meta name="keywords" content="retirement corpus calculator, retirement calculator india, how much to retire, retirement corpus, lump sum for retirement, retirement income calculator, fire calculator india, corpus calculator, monthly income retirement, inflation adjusted retirement, equity debt allocation retirement, retirement planning calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/retirement-corpus/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Retirement Corpus Calculator — Lump Sum to Invest Today | 1618.dev" />
+  <meta property="og:description" content="How much to invest today for a target monthly retirement income — with editable equity/debt returns, inflation, and a year-by-year breakdown plus chart. India defaults." />
+  <meta property="og:url" content="https://1618.dev/tools/retirement-corpus/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Retirement Corpus Calculator — 1618.dev" />
+  <meta name="twitter:description" content="The lump sum to invest today for your retirement income, with a year-by-year breakdown and chart." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Retirement Corpus Calculator",
+    "description": "Calculate the lump sum to invest today for a target monthly retirement income, with editable equity/debt returns, inflation and equity allocation, plus a year-by-year breakdown and chart.",
+    "url": "https://1618.dev/tools/retirement-corpus/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    .grid { display: grid; gap: 1rem; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 540px) { .grid-3, .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .sym-row { display: flex; gap: 0.5rem; }
+    .sym-row #symbol { flex: 0 0 3.5rem; text-align: center; }
+    .sym-row input[type="number"] { flex: 1 1 auto; }
+    fieldset {
+      border: 1px solid var(--border); border-radius: 8px; padding: 1rem;
+      margin: 1rem 0 0;
+    }
+    fieldset legend { padding: 0 0.5rem; color: var(--muted); font-size: 0.85rem; }
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem 1.5rem; margin-top: 1rem; }
+    .stats .s-label { color: var(--muted); font-size: 0.8rem; }
+    .stats .s-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chart-wrap { margin-top: 0.5rem; }
+    #chart { width: 100%; height: 320px; display: block; }
+    .legend { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    .legend .key { display: inline-flex; align-items: center; gap: 0.4rem; }
+    .legend .box { width: 0.9rem; height: 0.9rem; border-radius: 3px; display: inline-block; }
+    .table-scroll { max-height: 460px; overflow-y: auto; margin-top: 0.5rem; }
+    .table-scroll table { margin: 0; }
+    .table-scroll thead th { position: sticky; top: 0; background: var(--card); }
+    tr.retire td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+    tr.retire-start td { box-shadow: inset 0 2px 0 var(--accent); }
+    td.neg { color: #c0392b; }
+    @media (prefers-color-scheme: dark) { td.neg { color: #ff8a80; } }
+    .error { color: #c0392b; font-size: 0.95rem; margin: 0.5rem 0 0; }
+    @media (prefers-color-scheme: dark) { .error { color: #ff8a80; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Retirement corpus calculator</h2>
+      <p class="muted">How much do you need to invest <b>today</b>, as a one-time lump sum, to draw a chosen monthly income through retirement — with the pot lasting exactly to your planned age? Set your income and ages, tune the return/inflation assumptions, and see a year-by-year breakdown. Defaults are India-flavoured. Everything runs in your browser.</p>
+
+      <form id="form" class="card">
+        <label>
+          Desired monthly income
+          <span class="sym-row">
+            <input type="text" id="symbol" value="₹" aria-label="Currency symbol" />
+            <input type="number" id="income" value="100000" min="0" step="any" />
+          </span>
+        </label>
+        <label style="margin-top:0.75rem">
+          This income is in
+          <select id="basis">
+            <option value="today" selected>today's money (inflate to retirement)</option>
+            <option value="retire">value at retirement (already future rupees)</option>
+          </select>
+        </label>
+
+        <div class="grid grid-3" style="margin-top:0.75rem">
+          <label>Current age
+            <input type="number" id="current-age" value="30" min="0" max="120" step="1" />
+          </label>
+          <label>Retirement age
+            <input type="number" id="retirement-age" value="60" min="0" max="120" step="1" />
+          </label>
+          <label>Income needed until age
+            <input type="number" id="final-age" value="85" min="0" max="120" step="1" />
+          </label>
+        </div>
+
+        <fieldset>
+          <legend>Assumptions (editable)</legend>
+          <div class="grid grid-3">
+            <label>Equity return % p.a.
+              <input type="number" id="equity-return" value="14" step="any" />
+            </label>
+            <label>Debt return % p.a.
+              <input type="number" id="debt-return" value="6" step="any" />
+            </label>
+            <label>Inflation % p.a.
+              <input type="number" id="inflation" value="7" step="any" />
+            </label>
+            <label>Equity % before retirement
+              <input type="number" id="equity-pre" value="100" min="0" max="100" step="any" />
+            </label>
+            <label>Equity % after retirement
+              <input type="number" id="equity-post" value="60" min="0" max="100" step="any" />
+            </label>
+          </div>
+        </fieldset>
+
+        <button type="submit" id="go" disabled style="margin-top:1rem">Loading Python&hellip;</button>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Invest this lump sum today</span>
+            <span id="r-corpus">&mdash;</span>
+          </div>
+          <div class="stats">
+            <div><div class="s-label">Corpus at retirement</div><div class="s-val" id="r-at-ret">&mdash;</div></div>
+            <div><div class="s-label">Blended return pre / post</div><div class="s-val" id="r-returns">&mdash;</div></div>
+            <div><div class="s-label">First-year income (monthly)</div><div class="s-val" id="r-first">&mdash;</div></div>
+            <div><div class="s-label">Final-year income (monthly)</div><div class="s-val" id="r-last">&mdash;</div></div>
+            <div><div class="s-label">Total withdrawn over retirement</div><div class="s-val" id="r-total">&mdash;</div></div>
+            <div><div class="s-label">Years saving / drawing</div><div class="s-val" id="r-years">&mdash;</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">Portfolio &amp; withdrawals by age</h3>
+          <div class="chart-wrap"><canvas id="chart"></canvas></div>
+          <div class="legend">
+            <span class="key"><span class="box" id="lg-port"></span> Portfolio value</span>
+            <span class="key"><span class="box" id="lg-wd"></span> Annual withdrawal</span>
+            <span class="key">┊ retirement age</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">Year-by-year breakdown</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Age</th><th>Opening</th><th>Withdrawn</th><th>Returns</th><th>Closing</th><th>Net change</th></tr>
+              </thead>
+              <tbody id="breakdown"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <h3>How this is worked out</h3>
+      <p class="muted">
+        Returns are <b>blended</b> from your equity / debt split: with the
+        defaults that's 14% while you're accumulating (100% equity) and 10.8%
+        in retirement (60% equity, 40% debt). Your desired income is taken in
+        today's money, inflated to the retirement date, then grown by inflation
+        every year of retirement so your <i>real</i> spending power stays flat.
+      </p>
+      <p class="muted">
+        The lump sum is sized so the portfolio is drawn down to exactly zero
+        right after the final year's withdrawal. Withdrawals are taken at the
+        start of each year, from your retirement age through the final age,
+        inclusive. The corpus needed at retirement is the present value of that
+        rising income stream at the post-retirement return; discounting it back
+        at the pre-retirement return gives the amount to invest today.
+      </p>
+      <p class="muted">
+        These are nominal-return projections under fixed assumptions — markets
+        don't deliver steady returns, sequence-of-returns risk is real, and
+        taxes and fees aren't modelled. Treat the figure as a planning estimate,
+        not a guarantee, and revisit it as your situation changes. Not financial
+        advice.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../sip-calculator/">SIP calculator</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../monthly-annuity/">Monthly annuity</a>
+        <a href="../../">&larr; all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">retirement corpus calculator</span>
+        <span class="kw">retirement calculator india</span>
+        <span class="kw">how much to retire</span>
+        <span class="kw">lump sum for retirement</span>
+        <span class="kw">retirement income calculator</span>
+        <span class="kw">fire calculator india</span>
+        <span class="kw">corpus calculator</span>
+        <span class="kw">inflation adjusted retirement</span>
+        <span class="kw">equity debt allocation</span>
+        <span class="kw">retirement planning</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide, ready = false, lastSchedule = null, lastRetAge = null;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      ready = true;
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+      calculate();
+    }
+
+    function sym() { return document.getElementById('symbol').value || '₹'; }
+    const grp = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+
+    // Indian compact form for headline + axes (Cr / L), full grouping otherwise.
+    function money(x) {
+      const neg = x < 0; x = Math.abs(x);
+      let out;
+      if (x >= 1e7) out = (x / 1e7).toFixed(2) + ' Cr';
+      else if (x >= 1e5) out = (x / 1e5).toFixed(2) + ' L';
+      else out = grp.format(Math.round(x));
+      return (neg ? '−' : '') + sym() + out;
+    }
+    function moneyFull(x) {
+      const neg = x < 0;
+      return (neg ? '−' : '') + sym() + grp.format(Math.round(Math.abs(x)));
+    }
+
+    function num(id) { return parseFloat(document.getElementById(id).value); }
+    function intval(id) { return parseInt(document.getElementById(id).value, 10); }
+
+    function calculate(e) {
+      if (e) e.preventDefault();
+      if (!ready) return;
+      const errEl = document.getElementById('error');
+      const vals = [num('income'), intval('current-age'), intval('retirement-age'),
+                    intval('final-age'), num('equity-return'), num('debt-return'),
+                    num('inflation'), num('equity-pre'), num('equity-post')];
+      if (vals.some(v => !Number.isFinite(v))) {
+        errEl.textContent = 'Fill in every field with a number.';
+        errEl.hidden = false; document.getElementById('output').hidden = true; return;
+      }
+      const todays = document.getElementById('basis').value === 'today' ? 'True' : 'False';
+      const expr = `logic.plan_json(${vals.join(', ')}, ${todays})`;
+
+      let data;
+      try {
+        data = JSON.parse(pyodide.runPython(expr));
+      } catch (err) {
+        const msg = (err && err.message ? err.message : String(err)).trim().split('\n').pop();
+        errEl.textContent = msg; errEl.hidden = false;
+        document.getElementById('output').hidden = true; return;
+      }
+      errEl.hidden = true;
+      render(data);
+    }
+
+    function render(data) {
+      const s = data.summary, a = data.assumptions;
+      document.getElementById('r-corpus').textContent = money(s.corpus_today);
+      document.getElementById('r-at-ret').textContent = money(s.corpus_at_retirement);
+      document.getElementById('r-returns').textContent = `${a.r_pre_pct}% / ${a.r_post_pct}%`;
+      document.getElementById('r-first').textContent = moneyFull(s.first_year_monthly);
+      document.getElementById('r-last').textContent = moneyFull(s.last_year_monthly);
+      document.getElementById('r-total').textContent = money(s.total_withdrawn);
+      document.getElementById('r-years').textContent =
+        `${s.years_accumulation} / ${s.years_retirement} yrs`;
+
+      const tb = document.getElementById('breakdown');
+      tb.innerHTML = '';
+      let firstRetire = true;
+      for (const row of data.schedule) {
+        const tr = document.createElement('tr');
+        if (row.phase === 'withdraw') {
+          tr.className = firstRetire ? 'retire retire-start' : 'retire';
+          firstRetire = false;
+        }
+        const netCls = row.net < 0 ? ' class="neg"' : '';
+        tr.innerHTML =
+          `<td>${row.age}</td>` +
+          `<td>${moneyFull(row.opening)}</td>` +
+          `<td>${row.withdrawal ? moneyFull(row.withdrawal) : '—'}</td>` +
+          `<td>${moneyFull(row.returns)}</td>` +
+          `<td>${moneyFull(row.closing)}</td>` +
+          `<td${netCls}>${row.net < 0 ? '−' : ''}${sym()}${grp.format(Math.round(Math.abs(row.net)))}</td>`;
+        tb.appendChild(tr);
+      }
+
+      lastSchedule = data.schedule;
+      lastRetAge = intval('retirement-age');
+      drawChart();
+    }
+
+    function cssVar(name) {
+      return getComputedStyle(document.body).getPropertyValue(name).trim();
+    }
+
+    function drawChart() {
+      if (!lastSchedule) return;
+      const canvas = document.getElementById('chart');
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
+      canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const accent = cssVar('--accent') || '#3b82f6';
+      const fg = cssVar('--fg') || '#111';
+      const muted = cssVar('--muted') || '#888';
+      const wdColor = '#e07b39';
+      document.getElementById('lg-port').style.background = accent;
+      document.getElementById('lg-wd').style.background = wdColor;
+
+      const data = lastSchedule;
+      const mL = 56, mR = 16, mT = 12, mB = 26;
+      const W = cssW - mL - mR, H = cssH - mT - mB;
+      const n = data.length;
+      const ages = data.map(d => d.age);
+      const minAge = ages[0], maxAge = ages[n - 1];
+      const xOf = age => mL + (W * (age - minAge)) / Math.max(1, maxAge - minAge);
+
+      const maxPort = Math.max(...data.map(d => d.closing), data[0].opening, 1);
+      const maxWd = Math.max(...data.map(d => d.withdrawal), 1);
+      const yPort = v => mT + H - (H * v) / maxPort;
+      const yWd = v => mT + H - (H * 0.8 * v) / maxWd;  // bars use 80% height
+
+      // gridlines + left axis labels (portfolio scale)
+      ctx.strokeStyle = cssVar('--border') || '#ddd';
+      ctx.fillStyle = muted;
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.lineWidth = 1;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (let i = 0; i <= 4; i++) {
+        const v = (maxPort * i) / 4, y = yPort(v);
+        ctx.beginPath(); ctx.moveTo(mL, y); ctx.lineTo(mL + W, y); ctx.stroke();
+        ctx.fillText(money(v).replace(sym(), ''), mL - 6, y);
+      }
+
+      // withdrawal bars
+      const bw = Math.max(2, (W / n) * 0.55);
+      ctx.fillStyle = wdColor + 'cc';
+      for (const d of data) {
+        if (!d.withdrawal) continue;
+        const x = xOf(d.age) - bw / 2, y = yWd(d.withdrawal);
+        ctx.fillRect(x, y, bw, mT + H - y);
+      }
+
+      // portfolio area + line
+      ctx.beginPath();
+      data.forEach((d, i) => {
+        const x = xOf(d.age), y = yPort(d.closing);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.lineTo(xOf(maxAge), mT + H); ctx.lineTo(xOf(minAge), mT + H); ctx.closePath();
+      ctx.fillStyle = accent + '22'; ctx.fill();
+      ctx.beginPath();
+      data.forEach((d, i) => {
+        const x = xOf(d.age), y = yPort(d.closing);
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.stroke();
+
+      // retirement vertical line
+      if (lastRetAge >= minAge && lastRetAge <= maxAge) {
+        const x = xOf(lastRetAge);
+        ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = muted;
+        ctx.beginPath(); ctx.moveTo(x, mT); ctx.lineTo(x, mT + H); ctx.stroke();
+        ctx.restore();
+      }
+
+      // x-axis age labels
+      ctx.fillStyle = muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      const step = Math.max(1, Math.round((maxAge - minAge) / 8));
+      for (let age = minAge; age <= maxAge; age += step) {
+        ctx.fillText(String(age), xOf(age), mT + H + 6);
+      }
+      ctx.fillText(String(maxAge), xOf(maxAge), mT + H + 6);
+    }
+
+    ['income', 'symbol', 'current-age', 'retirement-age', 'final-age',
+     'equity-return', 'debt-return', 'inflation', 'equity-pre', 'equity-post', 'basis']
+      .forEach(id => document.getElementById(id)
+        .addEventListener('input', () => calculate()));
+    document.getElementById('form').addEventListener('submit', calculate);
+    window.addEventListener('resize', drawChart);
+    init();
+  </script>
+</body>
+</html>
