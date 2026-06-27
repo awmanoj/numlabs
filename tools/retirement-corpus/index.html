@@ -315,6 +315,8 @@
 
       lastSchedule = data.schedule;
       lastRetAge = intval('retirement-age');
+      // Reveal output before drawing so the canvas has a real width to measure.
+      document.getElementById('output').hidden = false;
       drawChart();
     }
 
