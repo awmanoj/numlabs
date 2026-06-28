@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Koch Snowflake Generator — Watch a Fractal Draw Itself | 1618.dev</title>
+  <meta name="description" content="Interactive Koch snowflake generator. Watch the fractal trace itself slowly, edge by edge: classic snowflake, anti-snowflake, or a random coastline from the same rule. Infinite perimeter, finite area. Runs in your browser." />
+  <meta name="keywords" content="koch snowflake, koch curve, fractal generator, edge replacement fractal, koch snowflake perimeter, infinite perimeter finite area, fractal dimension, anti-snowflake, random koch curve, l-system fractal, self similar fractal, interactive fractal" />
+  <link rel="canonical" href="https://1618.dev/tools/koch-snowflake/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Koch Snowflake Generator — Watch a Fractal Draw Itself | 1618.dev" />
+  <meta property="og:description" content="Watch the Koch snowflake trace itself slowly, edge by edge — classic, anti-snowflake, or a random coastline from the same rule. Infinite perimeter, finite area." />
+  <meta property="og:url" content="https://1618.dev/tools/koch-snowflake/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Koch Snowflake Generator — 1618.dev" />
+  <meta name="twitter:description" content="Watch a Koch snowflake draw itself slowly, edge by edge. Classic, anti, or random. Interactive, in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Koch Snowflake Generator",
+    "description": "Interactive Koch snowflake generator that traces the fractal slowly, edge by edge: classic snowflake, anti-snowflake, or a random coastline from the same edge-replacement rule. Infinite perimeter, finite area.",
+    "url": "https://1618.dev/tools/koch-snowflake/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+  <style>
+    .ctl label { font-size: 0.85rem; }
+    .ctl .row { display: flex; align-items: center; gap: 0.6rem; }
+    .ctl input[type="range"] { flex: 1 1 auto; }
+    .ctl .val { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 2.5rem; text-align: right; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Koch Snowflake Generator</h2>
+      <p class="muted">
+        One rule, drawn slowly so you can watch the shape arrive: take every
+        edge, cut it into thirds, and pop an equilateral bump out of the middle.
+        Repeat. Point the bumps <strong>outward</strong> and order appears — the
+        perfect <strong>Koch snowflake</strong>. Point them <strong>inward</strong>
+        for its hollow twin. Or let each bump <strong>flip a coin</strong> and the
+        very same rule grows a wild, random coastline. The outline never
+        stops getting longer, yet it always encloses a finite area.
+      </p>
+
+      <div class="fractal-bar" id="info">
+        <span><b id="i-n">—</b> iterations</span>
+        <span><b id="i-seg">—</b> segments</span>
+        <span>perimeter <b id="i-per">—</b></span>
+        <span>dimension <b id="i-dim">—</b></span>
+        <span id="i-area-wrap" hidden>area &rarr; <b id="i-area">—</b></span>
+        <span class="busy" id="i-draw"></span>
+      </div>
+
+      <div class="fractal-stage" id="stage">
+        <canvas id="base" class="base"></canvas>
+        <canvas id="overlay" class="overlay"></canvas>
+      </div>
+
+      <div class="controls-grid">
+        <div class="ctl">
+          <label for="iter">Iterations <span class="val" id="iter-val">4</span></label>
+          <div class="row">
+            <input type="range" id="iter" min="0" max="6" step="1" value="4" />
+          </div>
+        </div>
+
+        <div class="ctl">
+          <label for="speed">Draw speed</label>
+          <div class="row">
+            <select id="speed">
+              <option value="6">very slow — meditate</option>
+              <option value="18" selected>slow</option>
+              <option value="55">medium</option>
+              <option value="200">fast</option>
+              <option value="100000000">instant</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <label for="mode">Bump direction</label>
+          <div class="row">
+            <select id="mode">
+              <option value="classic" selected>classic — outward (snowflake)</option>
+              <option value="anti">anti — inward</option>
+              <option value="random">random — coin flip (coastline)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <label for="color">Colour</label>
+          <div class="row">
+            <select id="color">
+              <option value="rainbow" selected>rainbow along the path</option>
+              <option value="ice">ice</option>
+              <option value="fire">fire</option>
+              <option value="mono">single colour</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" id="replay">↻ Redraw</button>
+        <button type="button" id="shuffle" class="secondary">🎲 New random</button>
+        <button type="button" id="save" class="secondary">Save PNG</button>
+      </div>
+
+      <h3>Why it's beautiful — and a little impossible</h3>
+      <p class="muted">
+        Every round multiplies the number of edges by four while shrinking each
+        to a third of its length, so the perimeter grows by
+        <b>4/3</b> each time — 3, 4, 5.33, 7.1, 9.5, … off to infinity. The
+        added bumps get tiny so fast, though, that the enclosed area only ever
+        creeps up to <b>8/5</b> of the starting triangle. An infinitely long
+        boundary around a finite area: that's the paradox the snowflake makes
+        visible.
+      </p>
+      <p class="muted">
+        It is <b>self-similar</b> — zoom into any edge and you'd find the whole
+        construction again — and its <b>fractal dimension</b> is
+        log&nbsp;4&nbsp;/&nbsp;log&nbsp;3&nbsp;&approx;&nbsp;1.2619: more than a
+        line, less than a filled shape. The <b>random</b> mode keeps the exact
+        same dimension and perimeter growth, yet no two runs look alike — order
+        and randomness wearing the same clothes.
+      </p>
+      <p class="muted">
+        The maths lives in <code>logic.py</code> (the point construction and the
+        perimeter / area / dimension you see above); the browser just strokes the
+        line list, one segment at a time, at the pace you choose.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../mandelbrot/">Mandelbrot set</a>
+        <a href="../julia/">Julia set</a>
+        <a href="../newton-fractal/">Newton fractal</a>
+        <a href="../barnsley-fern/">Barnsley fern</a>
+        <a href="../sierpinski-triangle/">Sierpinski triangle</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">koch snowflake</span>
+        <span class="kw">koch curve</span>
+        <span class="kw">fractal generator</span>
+        <span class="kw">edge replacement fractal</span>
+        <span class="kw">infinite perimeter finite area</span>
+        <span class="kw">fractal dimension</span>
+        <span class="kw">anti-snowflake</span>
+        <span class="kw">random koch curve</span>
+        <span class="kw">l-system fractal</span>
+        <span class="kw">self similar fractal</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ── JS mirror of logic.py's construction (for instant, animatable points).
+    //    logic.py stays the source of truth and backs the numbers in the bar.
+    const ANGLE = Math.PI / 3;
+
+    function mulberry32(seed) {
+      let a = seed >>> 0;
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function triangle() {
+      const r = 1 / Math.sqrt(3);
+      const p = [];
+      for (let k = 0; k < 3; k++) {
+        const a = Math.PI / 2 + k * 2 * Math.PI / 3;
+        p.push([r * Math.cos(a), r * Math.sin(a)]);
+      }
+      return p;
+    }
+
+    function apex(c, e, sign) {
+      const dx = e[0] - c[0], dy = e[1] - c[1], a = sign * ANGLE;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      return [c[0] + dx * ca - dy * sa, c[1] + dx * sa + dy * ca];
+    }
+
+    function outwardSign(pts) {
+      const cx = (pts[0][0] + pts[1][0] + pts[2][0]) / 3;
+      const cy = (pts[0][1] + pts[1][1] + pts[2][1]) / 3;
+      const a = pts[0], b = pts[1];
+      const c = [a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3];
+      const e = [a[0] + 2 * (b[0] - a[0]) / 3, a[1] + 2 * (b[1] - a[1]) / 3];
+      const dp = apex(c, e, 1), dn = apex(c, e, -1);
+      const d2 = (p) => (p[0] - cx) ** 2 + (p[1] - cy) ** 2;
+      return d2(dp) > d2(dn) ? 1 : -1;
+    }
+
+    function kochPoints(iterations, mode, seed) {
+      let pts = triangle();
+      const base = outwardSign(pts);
+      const rng = mulberry32(seed);
+      for (let it = 0; it < iterations; it++) {
+        const out = [];
+        const n = pts.length;
+        for (let i = 0; i < n; i++) {
+          const a = pts[i], b = pts[(i + 1) % n];
+          const c = [a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3];
+          const e = [a[0] + 2 * (b[0] - a[0]) / 3, a[1] + 2 * (b[1] - a[1]) / 3];
+          let sign;
+          if (mode === 'classic') sign = base;
+          else if (mode === 'anti') sign = -base;
+          else sign = rng() < 0.5 ? base : -base;
+          out.push(a, c, apex(c, e, sign), e);
+        }
+        pts = out;
+      }
+      return pts;
+    }
+
+    // ── canvas + animation state ─────────────────────────────────────────────
+    const stage = document.getElementById('stage');
+    const base = document.getElementById('base');
+    const overlay = document.getElementById('overlay');
+    const bctx = base.getContext('2d');
+    const octx = overlay.getContext('2d');
+
+    let W = 0, H = 0, dpr = 1;
+    let px = [];                 // pixel-space points (closed)
+    let N = 0, drawn = 0, progress = 0, rafId = null, lastT = 0;
+    let segPerSec = 18;
+    let iterations = 4, mode = 'classic', seed = 1, colorMode = 'rainbow';
+    let pyodide = null, ready = false;
+
+    function sizeCanvas() {
+      dpr = window.devicePixelRatio || 1;
+      const cssW = Math.round(stage.clientWidth);
+      const cssH = Math.round(cssW * 0.9);
+      W = cssW; H = cssH;
+      for (const cv of [base, overlay]) {
+        cv.style.height = cssH + 'px';
+        cv.width = cssW * dpr; cv.height = cssH * dpr;
+      }
+      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function computePixels() {
+      const pts = kochPoints(iterations, mode, seed);
+      let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+      for (const [x, y] of pts) {
+        if (x < minx) minx = x; if (x > maxx) maxx = x;
+        if (y < miny) miny = y; if (y > maxy) maxy = y;
+      }
+      const scale = Math.min(W * 0.84 / (maxx - minx), H * 0.84 / (maxy - miny));
+      const ox = W / 2 - scale * (minx + maxx) / 2;
+      const oy = H / 2 + scale * (miny + maxy) / 2;
+      px = pts.map(([x, y]) => [ox + scale * x, oy - scale * y]);  // flip y
+      N = px.length;
+    }
+
+    function strokeColor(i) {
+      const t = N ? i / N : 0;
+      if (colorMode === 'rainbow') return `hsl(${t * 360}, 85%, 60%)`;
+      if (colorMode === 'fire') return `hsl(${t * 55}, 95%, ${50 + t * 12}%)`;
+      if (colorMode === 'ice') return `hsl(${205 - t * 55}, 85%, ${55 + t * 25}%)`;
+      return getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#d4af37';
+    }
+
+    function drawSeg(ctx, i, frac) {
+      const a = px[i], b = px[(i + 1) % N];
+      const ex = frac === undefined ? b[0] : a[0] + (b[0] - a[0]) * frac;
+      const ey = frac === undefined ? b[1] : a[1] + (b[1] - a[1]) * frac;
+      ctx.strokeStyle = strokeColor(i);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(ex, ey);
+      ctx.stroke();
+    }
+
+    function penTip(x, y, color) {
+      const g = octx.createRadialGradient(x, y, 0, x, y, 9);
+      g.addColorStop(0, color);
+      g.addColorStop(1, 'transparent');
+      octx.fillStyle = g;
+      octx.beginPath(); octx.arc(x, y, 9, 0, Math.PI * 2); octx.fill();
+    }
+
+    function frame(t) {
+      if (!lastT) lastT = t;
+      const dt = Math.min(0.05, (t - lastT) / 1000);
+      lastT = t;
+      progress = Math.min(N, progress + segPerSec * dt);
+      const complete = Math.floor(progress);
+
+      for (; drawn < complete; drawn++) drawSeg(bctx, drawn);
+
+      octx.clearRect(0, 0, W, H);
+      if (progress < N) {
+        const frac = progress - complete;
+        if (frac > 0) drawSeg(octx, complete, frac);
+        const a = px[complete], b = px[(complete + 1) % N];
+        penTip(a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac,
+               strokeColor(complete));
+        updateProgress();
+        rafId = requestAnimationFrame(frame);
+      } else {
+        octx.clearRect(0, 0, W, H);
+        rafId = null;
+        updateProgress();
+      }
+    }
+
+    function updateProgress() {
+      const pct = N ? Math.round(progress / N * 100) : 0;
+      document.getElementById('i-draw').textContent =
+        pct < 100 ? `drawing… ${pct}%` : 'complete';
+    }
+
+    function restart() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      computePixels();
+      bctx.clearRect(0, 0, W, H);
+      octx.clearRect(0, 0, W, H);
+      bctx.lineWidth = 1.3; bctx.lineCap = 'round'; bctx.lineJoin = 'round';
+      octx.lineWidth = 1.3; octx.lineCap = 'round'; octx.lineJoin = 'round';
+      drawn = 0; progress = 0; lastT = 0;
+      updateInfo();
+      rafId = requestAnimationFrame(frame);
+    }
+
+    // ── info bar (Pyodide-backed numbers when ready, JS fallback before) ──────
+    function jsMetrics(n) {
+      return {
+        segments: 3 * 4 ** n,
+        perimeter: 3 * (4 / 3) ** n,
+        dimension: Math.log(4) / Math.log(3),
+        area: (Math.sqrt(3) / 4) * (8 / 5 - 3 / 5 * (4 / 9) ** n),
+        limit_area: (Math.sqrt(3) / 4) * 8 / 5,
+      };
+    }
+
+    function updateInfo() {
+      let m;
+      if (ready) {
+        pyodide.globals.set('n', iterations);
+        m = JSON.parse(pyodide.runPython('logic.metrics_json(n)'));
+      } else {
+        m = jsMetrics(iterations);
+      }
+      document.getElementById('i-n').textContent = iterations;
+      document.getElementById('i-seg').textContent = m.segments.toLocaleString();
+      document.getElementById('i-per').textContent =
+        m.perimeter.toFixed(2) + '× side';
+      document.getElementById('i-dim').textContent = m.dimension.toFixed(4);
+      const areaWrap = document.getElementById('i-area-wrap');
+      if (mode === 'classic') {
+        document.getElementById('i-area').textContent =
+          m.area.toFixed(3) + ' (→ ' + m.limit_area.toFixed(3) + ')';
+        areaWrap.hidden = false;
+      } else {
+        areaWrap.hidden = true;
+      }
+    }
+
+    // ── controls ─────────────────────────────────────────────────────────────
+    document.getElementById('iter').addEventListener('input', (e) => {
+      iterations = parseInt(e.target.value, 10);
+      document.getElementById('iter-val').textContent = iterations;
+      restart();
+    });
+    document.getElementById('speed').addEventListener('change', (e) => {
+      segPerSec = parseFloat(e.target.value);
+      // if it already finished, a speed change shouldn't redraw; otherwise it
+      // just changes the pace of the run in progress
+      if (!rafId && progress >= N && segPerSec > 1e6) { /* leave complete */ }
+    });
+    document.getElementById('mode').addEventListener('change', (e) => {
+      mode = e.target.value;
+      document.getElementById('shuffle').style.display =
+        mode === 'random' ? '' : 'none';
+      restart();
+    });
+    document.getElementById('color').addEventListener('change', (e) => {
+      colorMode = e.target.value; restart();
+    });
+    document.getElementById('replay').addEventListener('click', restart);
+    document.getElementById('shuffle').addEventListener('click', () => {
+      seed = (Math.random() * 1e9) | 0; restart();
+    });
+    document.getElementById('save').addEventListener('click', () => {
+      // flatten base + overlay onto a temp canvas at full resolution
+      const out = document.createElement('canvas');
+      out.width = base.width; out.height = base.height;
+      const c = out.getContext('2d');
+      c.fillStyle = '#000'; c.fillRect(0, 0, out.width, out.height);
+      c.drawImage(base, 0, 0); c.drawImage(overlay, 0, 0);
+      const a = document.createElement('a');
+      a.download = `koch-${mode}-${iterations}.png`;
+      a.href = out.toDataURL('image/png'); a.click();
+    });
+    stage.addEventListener('click', restart);
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { sizeCanvas(); restart(); }, 150);
+    });
+
+    // ── boot ─────────────────────────────────────────────────────────────────
+    async function init() {
+      document.getElementById('shuffle').style.display = 'none';
+      sizeCanvas();
+      restart();                       // first draw is pure JS, instant
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then((r) => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      ready = true;
+      updateInfo();                    // swap to logic.py-backed numbers
+    }
+    init();
+  </script>
+</body>
+</html>

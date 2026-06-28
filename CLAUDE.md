@@ -124,12 +124,9 @@ existing tool, so just confirm it's present:
 
 ## Backlog
 
-**Fractal series (Maths)** — agreed lineup, build one at a time, not in bulk.
-Mandelbrot + Julia + Newton + Barnsley fern shipped; remaining, roughly in order:
-- `sierpinski-triangle` — chaos game vs. recursive subdivision (two routes, one
-  fractal)
-- `koch-snowflake` — recursive edge replacement / L-system; infinite perimeter,
-  finite area
+**Fractal series (Maths)** — agreed lineup, built one at a time, not in bulk.
+**Complete:** Mandelbrot → Julia → Newton → Barnsley fern → Sierpinski triangle
+→ Koch snowflake. All shipped.
 
 Same math/render split as `mandelbrot`: logic.py owns the real math + a `__main__`
 sanity check, JS owns the hot render loop.
