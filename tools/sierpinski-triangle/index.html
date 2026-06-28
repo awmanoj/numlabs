@@ -127,11 +127,11 @@
           <label class="chaos-ctrl">
             Draw speed
             <select id="speed">
-              <option value="600">Very slow</option>
-              <option value="1500">Slow</option>
-              <option value="4000" selected>Medium</option>
-              <option value="9000">Fast</option>
-              <option value="20000">Turbo</option>
+              <option value="180">very slow — meditate</option>
+              <option value="700" selected>slow</option>
+              <option value="2000">medium</option>
+              <option value="6000">fast</option>
+              <option value="20000">turbo</option>
             </select>
           </label>
 
@@ -263,7 +263,7 @@
     let colorMode = 'corner';
     let target = 120000;     // chaos points
     let depth = 5;           // subdivision depth
-    let batchSize = 4000;    // chaos points per frame
+    let batchSize = 700;     // chaos points per frame (default: slow)
     const view = { cx: 0, cy: 0, scale: 0.01 };
     let fitScale = 0.01;
 

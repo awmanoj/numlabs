@@ -101,6 +101,16 @@
               <option value="grayscale">Grayscale</option>
             </select>
           </label>
+          <label>
+            Draw speed
+            <select id="speed">
+              <option value="1">very slow — meditate</option>
+              <option value="3" selected>slow</option>
+              <option value="10">medium</option>
+              <option value="40">fast</option>
+              <option value="100000000">instant</option>
+            </select>
+          </label>
         </div>
         <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
           <button type="button" class="secondary" id="zoom-in">Zoom in</button>
@@ -235,6 +245,8 @@
     let maxIter = 200;
     let paletteName = 'ember';
     let renderTimer = null;
+    let fullRaf = null;       // the slow band-by-band reveal
+    let fullRows = 3;         // rows painted per frame — the draw-speed knob
     let lastInspect = null;   // {cr, ci} so we can redraw the marker on resize
 
     const PLACES = {
@@ -301,7 +313,22 @@
       };
     }
 
+    // Colour of a single point c — shared by the preview and the slow reveal.
+    function colorForC(cr, ci) {
+      const mu = smoothEscape(cr, ci);
+      if (mu < 0) return [0, 0, 0];                        // in the set
+      return paletteRGB(mu);
+    }
+
+    function cancelFull() {
+      if (fullRaf) { cancelAnimationFrame(fullRaf); fullRaf = null; }
+    }
+
+    // Low-res, whole-image preview (used live while dragging/zooming). Any slow
+    // reveal in flight is cancelled so interaction stays snappy.
     function render(step) {
+      cancelFull();
+      document.getElementById('b-busy').hidden = true;
       step = step || 1;
       const img = ctx.createImageData(W, H);
       const data = img.data;
@@ -310,10 +337,8 @@
         const ci = view.cy - (py - halfH) * view.scale;
         for (let px = 0; px < W; px += step) {
           const cr = view.cx + (px - halfW) * view.scale;
-          const mu = smoothEscape(cr, ci);
-          let r, g, b;
-          if (mu < 0) { r = g = b = 0; }                    // in the set
-          else { const c = paletteRGB(mu); r = c[0]; g = c[1]; b = c[2]; }
+          const c = colorForC(cr, ci);
+          const r = c[0], g = c[1], b = c[2];
           // Fill the step×step block so previews stay fast.
           const yEnd = Math.min(py + step, H), xEnd = Math.min(px + step, W);
           for (let yy = py; yy < yEnd; yy++) {
@@ -329,15 +354,44 @@
       updateBar();
     }
 
+    // Full-resolution render, revealed slowly band-by-band over the low-res
+    // preview already on the canvas — so you watch the fine detail sweep in.
     function renderFull() {
+      cancelFull();
       const busy = document.getElementById('b-busy');
-      busy.hidden = false;
-      // Yield once so the "rendering…" label paints before the blocking loop.
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        render(1);
+      const finish = () => {
         busy.hidden = true;
         if (lastInspect) drawOrbit(lastInspect.cr, lastInspect.ci, lastInspect.orbit);
-      }));
+      };
+      busy.hidden = false;
+      if (fullRows >= 1e8) {               // "instant": one blocking pass
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          render(1); updateBar(); finish();
+        }));
+        return;
+      }
+      const halfW = W / 2, halfH = H / 2;
+      let y = 0;
+      const band = () => {
+        const yEnd = Math.min(y + fullRows, H), bandH = yEnd - y;
+        const img = ctx.createImageData(W, bandH);
+        const data = img.data;
+        for (let py = y; py < yEnd; py++) {
+          const ci = view.cy - (py - halfH) * view.scale;
+          const rowBase = (py - y) * W * 4;
+          for (let px = 0; px < W; px++) {
+            const cr = view.cx + (px - halfW) * view.scale;
+            const c = colorForC(cr, ci);
+            const o = rowBase + px * 4;
+            data[o] = c[0]; data[o + 1] = c[1]; data[o + 2] = c[2]; data[o + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, y);
+        y = yEnd;
+        if (y < H) { fullRaf = requestAnimationFrame(band); }
+        else { fullRaf = null; updateBar(); finish(); }
+      };
+      fullRaf = requestAnimationFrame(band);
     }
 
     function scheduleFull(previewStep) {
@@ -521,6 +575,9 @@
     document.getElementById('palette').addEventListener('change', (e) => {
       paletteName = e.target.value;
       renderFull();
+    });
+    document.getElementById('speed').addEventListener('change', (e) => {
+      fullRows = parseFloat(e.target.value);   // picked up live by a running reveal
     });
     document.getElementById('zoom-in').addEventListener('click', () => { zoomAt(W / 2, H / 2, 0.6); renderFull(); });
     document.getElementById('zoom-out').addEventListener('click', () => { zoomAt(W / 2, H / 2, 1.6); renderFull(); });

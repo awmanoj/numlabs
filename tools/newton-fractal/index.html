@@ -105,6 +105,16 @@
             Relaxation a — <b id="relax-val">1.00</b>
             <input type="range" id="relax" min="0.30" max="1.90" step="0.01" value="1.00" />
           </label>
+          <label>
+            Draw speed
+            <select id="speed">
+              <option value="1">very slow — meditate</option>
+              <option value="3" selected>slow</option>
+              <option value="10">medium</option>
+              <option value="40">fast</option>
+              <option value="100000000">instant</option>
+            </select>
+          </label>
         </div>
         <div class="inline" style="gap:0.5rem;flex-wrap:wrap">
           <button type="button" class="secondary" id="zoom-in">Zoom in</button>
@@ -252,6 +262,8 @@
     let maxIter = 50;
     let relax = 1.0;
     let renderTimer = null;
+    let fullRaf = null;       // the slow band-by-band reveal
+    let fullRows = 3;         // rows painted per frame — the draw-speed knob
     let lastInspect = null;
     const TOL2 = 1e-12;
 
@@ -320,23 +332,34 @@
     function complexToPixel(zr, zi) {
       return { px: (zr - view.cx) / view.scale + W / 2, py: H / 2 - (zi - view.cy) / view.scale };
     }
+    // Colour of a single start-point z — which root it falls to, shaded by
+    // speed. Shared by the preview and the slow reveal.
+    function colorForC(zr0, zi0) {
+      const packed = newtonRoot(zr0, zi0);
+      if (packed < 0) return [0, 0, 0];                    // never settled
+      const idx = Math.floor(packed), shade = packed - idx;
+      return rootColor(idx, CUR.roots.length, shade);
+    }
+
+    function cancelFull() {
+      if (fullRaf) { cancelAnimationFrame(fullRaf); fullRaf = null; }
+    }
+
+    // Low-res, whole-image preview (used live while dragging/zooming). Any slow
+    // reveal in flight is cancelled so interaction stays snappy.
     function render(step) {
+      cancelFull();
+      document.getElementById('b-busy').hidden = true;
       step = step || 1;
       const img = ctx.createImageData(W, H);
       const data = img.data;
       const halfW = W / 2, halfH = H / 2;
-      const count = CUR.roots.length;
       for (let py = 0; py < H; py += step) {
         const zi0 = view.cy - (py - halfH) * view.scale;
         for (let px = 0; px < W; px += step) {
           const zr0 = view.cx + (px - halfW) * view.scale;
-          const packed = newtonRoot(zr0, zi0);
-          let r, g, b;
-          if (packed < 0) { r = g = b = 0; }
-          else {
-            const idx = Math.floor(packed), shade = packed - idx;
-            const c = rootColor(idx, count, shade); r = c[0]; g = c[1]; b = c[2];
-          }
+          const c = colorForC(zr0, zi0);
+          const r = c[0], g = c[1], b = c[2];
           const yEnd = Math.min(py + step, H), xEnd = Math.min(px + step, W);
           for (let yy = py; yy < yEnd; yy++) {
             let o = (yy * W + px) * 4;
@@ -350,15 +373,44 @@
       ctx.putImageData(img, 0, 0);
       updateBar();
     }
+
+    // Full-resolution render, revealed slowly band-by-band over the preview
+    // already on the canvas — so you watch the basins sweep in.
     function renderFull() {
+      cancelFull();
       const busy = document.getElementById('b-busy');
+      const finish = () => { busy.hidden = true; drawOverlay(); };
       busy.hidden = false;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        render(1);
-        busy.hidden = true;
-        drawOverlay();
-      }));
+      if (fullRows >= 1e8) {               // "instant": one blocking pass
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          render(1); updateBar(); finish();
+        }));
+        return;
+      }
+      const halfW = W / 2, halfH = H / 2;
+      let y = 0;
+      const band = () => {
+        const yEnd = Math.min(y + fullRows, H), bandH = yEnd - y;
+        const img = ctx.createImageData(W, bandH);
+        const data = img.data;
+        for (let py = y; py < yEnd; py++) {
+          const zi0 = view.cy - (py - halfH) * view.scale;
+          const rowBase = (py - y) * W * 4;
+          for (let px = 0; px < W; px++) {
+            const zr0 = view.cx + (px - halfW) * view.scale;
+            const c = colorForC(zr0, zi0);
+            const o = rowBase + px * 4;
+            data[o] = c[0]; data[o + 1] = c[1]; data[o + 2] = c[2]; data[o + 3] = 255;
+          }
+        }
+        ctx.putImageData(img, 0, y);
+        y = yEnd;
+        if (y < H) { fullRaf = requestAnimationFrame(band); }
+        else { fullRaf = null; updateBar(); finish(); }
+      };
+      fullRaf = requestAnimationFrame(band);
     }
+
     function scheduleFull(previewStep) {
       render(previewStep || 3);
       clearTimeout(renderTimer);
@@ -514,6 +566,9 @@
       resetView(); renderFull();
     });
     document.getElementById('scheme').addEventListener('change', (e) => { scheme = e.target.value; renderFull(); });
+    document.getElementById('speed').addEventListener('change', (e) => {
+      fullRows = parseFloat(e.target.value);   // picked up live by a running reveal
+    });
     document.getElementById('iter').addEventListener('input', (e) => {
       maxIter = parseInt(e.target.value, 10);
       document.getElementById('iter-val').textContent = maxIter;
