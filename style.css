@@ -187,20 +187,23 @@ th:first-child, td:first-child { text-align: left; }
 th { font-weight: 500; color: var(--muted); }
 
 /* Home page: widen the shell and flow the category blocks into columns.
-   auto-fill + minmax keeps it responsive — 3 columns on desktop collapse
+   CSS multi-column (not grid) lets short categories pack tightly under tall
+   ones — masonry-style — so a long list like Maths doesn't leave big gaps
+   beside it. column-width keeps it responsive: 3 columns on desktop collapse
    to 2, then 1, as the viewport narrows, with no fixed breakpoints. */
 .home .container { max-width: 1100px; }
 
 .home main {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 0.5rem 2.5rem;
-  align-items: start;
+  column-width: 300px;
+  column-gap: 2.5rem;
 }
 
-/* Each category owns its column slot; kill the first-child top margin so
-   every column starts level. */
-.home .category { margin: 0; }
+/* Keep each category whole — never split a list across a column break.
+   Kill the first-child top margin so every column starts level. */
+.home .category {
+  margin: 0 0 0.5rem;
+  break-inside: avoid;
+}
 .home .category h2 { margin-top: 1.25rem; }
 
 .tool-list { list-style: none; padding: 0; margin: 0; }
