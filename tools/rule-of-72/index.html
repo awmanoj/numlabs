@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rule of 72 Calculator — Time to Double Your Money | 1618.dev</title>
+  <meta name="description" content="How long to double, triple, or 10× your money? The Rule of 72 estimate next to the exact compound-growth answer, a milestone table, and the rate you'd need to double in N years." />
+  <meta name="keywords" content="rule of 72 calculator, doubling time calculator, time to double money, rule of 72, rule of 114, rule of 144, money doubling calculator, how long to double investment, compound growth time, tripling time, CAGR doubling" />
+  <link rel="canonical" href="https://1618.dev/tools/rule-of-72/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Rule of 72 Calculator — Time to Double Your Money | 1618.dev" />
+  <meta property="og:description" content="See how long it takes to double, triple, or 10× your money — the Rule of 72 shortcut next to the exact answer." />
+  <meta property="og:url" content="https://1618.dev/tools/rule-of-72/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Rule of 72 Calculator — 1618.dev" />
+  <meta name="twitter:description" content="How long to double your money? The Rule of 72 next to the exact answer. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Rule of 72 Calculator",
+    "description": "Estimate how long money takes to double, triple, or multiply at a given return — the Rule of 72 shortcut next to the exact compound-growth answer, with a milestone table and the rate needed to double in N years.",
+    "url": "https://1618.dev/tools/rule-of-72/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Rule of 72</h2>
+      <p class="muted">How long until your money doubles, triples, or grows ten-fold? The famous 72-shortcut, checked against the exact answer.</p>
+
+      <form id="form" class="card">
+        <label>
+          Currency symbol
+          <input type="text" id="symbol" value="$" maxlength="3" size="3" />
+        </label>
+        <label>
+          Starting amount
+          <input type="number" id="principal" value="1000" min="0" step="any" />
+        </label>
+        <label>
+          Annual return rate (%)
+          <input type="number" id="rate" value="8" step="any" />
+        </label>
+        <label>
+          Compounding
+          <select id="frequency">
+            <option value="1" selected>Annually</option>
+            <option value="2">Semi-annually</option>
+            <option value="4">Quarterly</option>
+            <option value="12">Monthly</option>
+            <option value="365">Daily</option>
+            <option value="0">Continuously</option>
+          </select>
+        </label>
+      </form>
+
+      <p id="loading" class="muted">Loading Python…</p>
+      <p id="error" class="muted" hidden>Enter a return rate above 0% — money can't double at zero growth.</p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Your money doubles in</span>
+            <span id="double-years">—</span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Rule of 72 estimate: <span id="double-rule">—</span> —
+            <span id="verdict">—</span>
+          </p>
+        </div>
+
+        <h3>Milestones</h3>
+        <p class="muted" style="margin-top:0">Time to reach each multiple, the Rule of 72 estimate, and what your starting amount becomes.</p>
+        <table>
+          <thead>
+            <tr><th>Growth</th><th>Exact</th><th>Rule of 72</th><th>Becomes</th></tr>
+          </thead>
+          <tbody id="milestones"></tbody>
+        </table>
+
+        <div class="controls-grid" style="margin-top:1.5rem">
+          <div class="card">
+            <h3 style="margin-top:0">Want to double faster?</h3>
+            <label>
+              Double in this many years
+              <input type="number" id="target-years" value="10" min="0.1" step="any" />
+            </label>
+            <p class="muted" style="margin-top:0.6rem">
+              You'd need to earn <strong><span id="required-rate">—</span></strong> a year.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0">Project forward</h3>
+            <label>
+              In this many years
+              <input type="number" id="horizon" value="20" min="0" step="any" />
+            </label>
+            <p class="muted" style="margin-top:0.6rem">
+              Grows to <strong><span id="forward-amount">—</span></strong>
+              (<span id="forward-multiple">—</span> your money).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Why 72?</h3>
+      <p class="muted">
+        Doubling means solving 2 = (1 + r)<sup>t</sup>, which gives
+        t = ln 2 / ln(1 + r). For the small rates real investments earn, that
+        curve is very close to <strong>72 / rate%</strong> — and 72 divides
+        cleanly by 2, 3, 4, 6, 8, 9 and 12, so the mental math is easy. The
+        shortcut is most accurate around <strong>8%</strong>; far from there,
+        trust the exact figure.
+      </p>
+      <p class="muted">
+        The trick generalises. The magic number for any target multiple m is
+        <strong>72 · log₂(m)</strong>: doubling uses 72, tripling ≈ 114
+        ("Rule of 114"), quadrupling = 144 ("Rule of 144"). Some people prefer
+        70 (cleaner division) or 69.3 (exactly right for continuous
+        compounding, since 100 · ln 2 ≈ 69.3).
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../compound-interest/">Compound interest</a>
+        <a href="../sip-calculator/">SIP calculator</a>
+        <a href="../annual-annuity/">Annual annuity</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">rule of 72 calculator</span>
+        <span class="kw">time to double money</span>
+        <span class="kw">doubling time</span>
+        <span class="kw">rule of 114</span>
+        <span class="kw">rule of 144</span>
+        <span class="kw">money doubling calculator</span>
+        <span class="kw">how long to double investment</span>
+        <span class="kw">compound growth time</span>
+        <span class="kw">tripling time</span>
+        <span class="kw">CAGR doubling</span>
+        <span class="kw">investment growth</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const money = new Intl.NumberFormat(undefined, {
+      style: 'decimal',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+
+    function years(y) {
+      // "9.0 years" reads better than "9 years"; keep one decimal, drop none.
+      return `${y.toFixed(1)} ${y === 1 ? 'year' : 'years'}`;
+    }
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      document.getElementById('loading').hidden = true;
+      recompute();
+    }
+
+    function call(expr) {
+      const proxy = pyodide.runPython(`logic.${expr}`);
+      const val = proxy && proxy.toJs
+        ? proxy.toJs({ dict_converter: Object.fromEntries })
+        : proxy;
+      if (proxy && proxy.destroy) proxy.destroy();
+      return val;
+    }
+
+    function recompute() {
+      if (!pyodide) return;
+
+      const symbol = document.getElementById('symbol').value || '';
+      const principal = parseFloat(document.getElementById('principal').value);
+      const rate = parseFloat(document.getElementById('rate').value);
+      const freq = parseInt(document.getElementById('frequency').value, 10);
+
+      const out = document.getElementById('output');
+      const err = document.getElementById('error');
+
+      if (!(rate > 0) || !isFinite(principal) || principal < 0) {
+        out.hidden = true;
+        err.hidden = !(isFinite(rate) && rate <= 0);
+        return;
+      }
+      err.hidden = true;
+      out.hidden = false;
+
+      const c = call(`classify(${rate}, 2, ${freq})`);
+      document.getElementById('double-years').textContent = years(c.exact_years);
+      document.getElementById('double-rule').textContent = years(c.estimate_years);
+      document.getElementById('verdict').textContent = c.verdict;
+
+      const rows = call(`milestones(${rate}, ${principal || 1}, ${freq})`);
+      const tbody = document.getElementById('milestones');
+      tbody.innerHTML = '';
+      for (const row of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td>${row.multiple}×</td>` +
+          `<td>${years(row.exact_years)}</td>` +
+          `<td>${years(row.rule_years)}</td>` +
+          `<td>${symbol}${money.format(row.amount)}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      // Reverse: rate needed to double within a chosen horizon.
+      const targetYears = parseFloat(document.getElementById('target-years').value);
+      const reqEl = document.getElementById('required-rate');
+      if (targetYears > 0) {
+        const r = call(`required_rate(2, ${targetYears}, ${freq})`);
+        reqEl.textContent = `${r.toFixed(2)}%`;
+      } else {
+        reqEl.textContent = '—';
+      }
+
+      // Forward: value after a chosen horizon at the current rate.
+      const horizon = parseFloat(document.getElementById('horizon').value);
+      const amtEl = document.getElementById('forward-amount');
+      const mulEl = document.getElementById('forward-multiple');
+      if (horizon >= 0 && isFinite(horizon)) {
+        const amt = call(`amount_after(${principal || 0}, ${rate}, ${horizon}, ${freq})`);
+        const mul = call(`multiple_after(${rate}, ${horizon}, ${freq})`);
+        amtEl.textContent = `${symbol}${money.format(amt)}`;
+        mulEl.textContent = `${mul.toFixed(2)}×`;
+      } else {
+        amtEl.textContent = '—';
+        mulEl.textContent = '—';
+      }
+    }
+
+    document.getElementById('form').addEventListener('input', recompute);
+    document.getElementById('target-years').addEventListener('input', recompute);
+    document.getElementById('horizon').addEventListener('input', recompute);
+    init();
+  </script>
+</body>
+</html>

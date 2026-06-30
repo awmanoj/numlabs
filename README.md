@@ -35,6 +35,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Freelance rate](tools/freelance-rate/) — the hourly rate you need to charge to hit a salary goal, after unpaid time off, non-billable hours, business expenses, and tax
 - [If I had invested…](tools/if-i-invested/) — what a lump sum in an Indian stock or index (Reliance, TCS, Infosys, HDFC Bank, the Sensex…) at a past year-end would be worth today: growth multiple, total return, and CAGR, dividends reinvested
 - [Retirement corpus calculator](tools/retirement-corpus/) — the lump sum to invest today for a target monthly retirement income, with editable equity/debt returns, inflation and pre/post-retirement equity split, a year-by-year breakdown, and a chart; India defaults
+- [Rule of 72](tools/rule-of-72/) — how long to double, triple, or 10× your money: the Rule of 72 estimate next to the exact compound-growth answer, a milestone table, and the rate you'd need to double in N years
 
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
