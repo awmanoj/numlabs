@@ -52,10 +52,6 @@
 
       <form id="form" class="card">
         <label>
-          Currency symbol
-          <input type="text" id="symbol" value="$" maxlength="3" size="3" />
-        </label>
-        <label>
           Starting amount
           <input type="number" id="principal" value="1000" min="0" step="any" />
         </label>
@@ -202,7 +198,6 @@
     function recompute() {
       if (!pyodide) return;
 
-      const symbol = document.getElementById('symbol').value || '';
       const principal = parseFloat(document.getElementById('principal').value);
       const rate = parseFloat(document.getElementById('rate').value);
       const freq = parseInt(document.getElementById('frequency').value, 10);
@@ -232,7 +227,7 @@
           `<td>${row.multiple}×</td>` +
           `<td>${years(row.exact_years)}</td>` +
           `<td>${years(row.rule_years)}</td>` +
-          `<td>${symbol}${money.format(row.amount)}</td>`;
+          `<td>${money.format(row.amount)}</td>`;
         tbody.appendChild(tr);
       }
 
@@ -253,7 +248,7 @@
       if (horizon >= 0 && isFinite(horizon)) {
         const amt = call(`amount_after(${principal || 0}, ${rate}, ${horizon}, ${freq})`);
         const mul = call(`multiple_after(${rate}, ${horizon}, ${freq})`);
-        amtEl.textContent = `${symbol}${money.format(amt)}`;
+        amtEl.textContent = money.format(amt);
         mulEl.textContent = `${mul.toFixed(2)}×`;
       } else {
         amtEl.textContent = '—';
