@@ -44,6 +44,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 ### Everyday Life
 - [Reading time estimator](tools/reading-time/) — how long any text takes to read silently or speak aloud, with word, character, sentence, and paragraph counts
 - [Pomodoro timer](tools/pomodoro-timer/) — focus sprints and breaks with customizable lengths and a soothing, generated chime at the end of each session
+- [Days until](tools/days-until/) — live countdown to any date: days, weeks and hours remaining, working days, the weekday it lands on, and how much of the current year is already gone
 
 ### Personality & Fun
 - [Birth year fun facts](tools/birth-year-facts/) — what released and happened the year you were born, plus the age you turn this year, your generation, Chinese zodiac, leap year, and Roman numerals

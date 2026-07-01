@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Days Until Calculator — Countdown to Any Date | 1618.dev</title>
+  <meta name="description" content="Count down to any date: days, weeks, and hours remaining, working days, the weekday it lands on, and how much of the year is already gone. Live ticking timer, presets for New Year and more." />
+  <meta name="keywords" content="days until calculator, countdown to date, how many days until, days between dates, working days calculator, business days between dates, days until new year, date countdown, weeks until, time until date" />
+  <link rel="canonical" href="https://1618.dev/tools/days-until/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Days Until Calculator — Countdown to Any Date | 1618.dev" />
+  <meta property="og:description" content="Count down to any date: days, weeks, working days, the weekday it lands on, and how much of the year is gone. Live timer." />
+  <meta property="og:url" content="https://1618.dev/tools/days-until/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Days Until Calculator — 1618.dev" />
+  <meta name="twitter:description" content="How many days until any date? Live countdown with weeks, working days, and year progress. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Days Until Calculator",
+    "description": "Count down to any date — days, weeks and hours remaining, working days, the weekday it lands on, and how much of the current year has already passed, with a live ticking timer.",
+    "url": "https://1618.dev/tools/days-until/",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Days until</h2>
+      <p class="muted">How long until a date that matters? Count down in days, weeks, working days — and see how much of the year is already gone.</p>
+
+      <form id="form" class="card">
+        <label>
+          Target date
+          <input type="date" id="target-date" />
+        </label>
+        <label>
+          Time (optional)
+          <input type="time" id="target-time" value="00:00" />
+        </label>
+        <div class="chips" id="presets" aria-label="Quick presets">
+          <button type="button" class="chip" data-preset="newyear">New Year's Day</button>
+          <button type="button" class="chip" data-preset="weekend">This weekend</button>
+          <button type="button" class="chip" data-preset="monthend">End of month</button>
+          <button type="button" class="chip" data-preset="yearend">End of year</button>
+        </div>
+      </form>
+
+      <p id="loading" class="muted">Loading Python…</p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="headline-label">Time until</span>
+            <span id="headline">—</span>
+          </div>
+          <p class="muted" id="ticker" style="margin-top:0.6rem;font-variant-numeric:tabular-nums">—</p>
+          <p class="muted" id="lands-on" style="margin-top:0.3rem">—</p>
+        </div>
+
+        <table>
+          <tbody id="stats"></tbody>
+        </table>
+
+        <h3 id="yp-title">This year so far</h3>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="yp-fill"></div>
+        </div>
+        <p class="muted" id="yp-text" style="margin-top:0.5rem">—</p>
+      </div>
+
+      <h3>How it counts</h3>
+      <p class="muted">
+        <strong>Total days / weeks / hours</strong> are the whole units between
+        now and the target. <strong>Working days</strong> counts only Monday to
+        Friday — a rough guide to how many business days you'll cross, ignoring
+        public holidays. The <strong>calendar breakdown</strong> (years, months,
+        days) borrows real month lengths, so it reads the way a person counts.
+        Everything updates live, second by second.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../age-calculator/">Age calculator</a>
+        <a href="../reading-time/">Reading time</a>
+        <a href="../pomodoro-timer/">Pomodoro timer</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">days until calculator</span>
+        <span class="kw">countdown to a date</span>
+        <span class="kw">how many days until</span>
+        <span class="kw">days between dates</span>
+        <span class="kw">working days calculator</span>
+        <span class="kw">business days between dates</span>
+        <span class="kw">days until new year</span>
+        <span class="kw">weeks until</span>
+        <span class="kw">date countdown</span>
+        <span class="kw">time until date</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const num = new Intl.NumberFormat();
+    const pad = (n) => String(n).padStart(2, '0');
+
+    let pyodide, tickTimer;
+
+    // Local ISO strings (never toISOString — that shifts to UTC).
+    function isoDate(d) {
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    function isoNow() {
+      const d = new Date();
+      return `${isoDate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      document.getElementById('loading').hidden = true;
+      if (!document.getElementById('target-date').value) setPreset('newyear');
+      startTicking();
+    }
+
+    function setPreset(name) {
+      const now = new Date();
+      let d;
+      if (name === 'newyear') {
+        d = new Date(now.getFullYear() + 1, 0, 1);
+      } else if (name === 'yearend') {
+        d = new Date(now.getFullYear(), 11, 31);
+      } else if (name === 'monthend') {
+        d = new Date(now.getFullYear(), now.getMonth() + 1, 0); // day 0 of next month
+      } else if (name === 'weekend') {
+        d = new Date(now);
+        const toSat = (6 - now.getDay() + 7) % 7 || 7; // next Saturday, never today
+        d.setDate(now.getDate() + toSat);
+      }
+      document.getElementById('target-date').value = isoDate(d);
+      document.getElementById('target-time').value = '00:00';
+      render();
+    }
+
+    function startTicking() {
+      render();
+      clearInterval(tickTimer);
+      tickTimer = setInterval(render, 1000);
+    }
+
+    function render() {
+      if (!pyodide) return;
+      const dateVal = document.getElementById('target-date').value;
+      const out = document.getElementById('output');
+      if (!dateVal) { out.hidden = true; return; }
+
+      const timeVal = document.getElementById('target-time').value || '00:00';
+      const target = `${dateVal}T${timeVal}`;
+
+      const proxy = pyodide.runPython(`logic.countdown(${JSON.stringify(isoNow())}, ${JSON.stringify(target)})`);
+      const r = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      out.hidden = false;
+
+      const future = r.direction === 'future';
+      const past = r.direction === 'past';
+      const rem = r.remaining;
+
+      document.getElementById('headline-label').textContent =
+        r.direction === 'now' ? 'Happening' : (future ? 'Time until' : 'Time since');
+      document.getElementById('headline').textContent =
+        r.direction === 'now' ? 'right now' : `${num.format(r.total_days)} ${r.total_days === 1 ? 'day' : 'days'}`;
+
+      document.getElementById('ticker').textContent =
+        `${rem.days}d ${pad(rem.hours)}h ${pad(rem.minutes)}m ${pad(rem.seconds)}s ${past ? 'ago' : (future ? 'to go' : '')}`.trim();
+
+      document.getElementById('lands-on').textContent =
+        `Lands on a ${r.target_weekday}.`;
+
+      const cal = [];
+      if (r.cal_years) cal.push(`${r.cal_years}y`);
+      if (r.cal_months) cal.push(`${r.cal_months}m`);
+      cal.push(`${r.cal_days}d`);
+
+      const rows = [
+        ['Total days', num.format(r.total_days)],
+        ['Weeks', `${num.format(r.total_weeks)} + ${r.weeks_remainder_days} ${r.weeks_remainder_days === 1 ? 'day' : 'days'}`],
+        ['Working days', num.format(r.business_days)],
+        ['Total hours', num.format(r.total_hours)],
+        ['Calendar', cal.join(' ')],
+      ];
+      const tbody = document.getElementById('stats');
+      tbody.innerHTML = '';
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<th style="text-align:left">${k}</th><td>${v}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      const yp = r.year_progress;
+      document.getElementById('yp-title').textContent = `${yp.year} so far`;
+      document.getElementById('yp-fill').style.width = `${yp.percent}%`;
+      document.getElementById('yp-text').textContent =
+        `Day ${yp.day_of_year} of ${yp.days_in_year} — ${yp.percent}% gone, ${num.format(yp.days_left)} days left in ${yp.year}.`;
+    }
+
+    document.getElementById('form').addEventListener('input', render);
+    document.getElementById('presets').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-preset]');
+      if (btn) setPreset(btn.dataset.preset);
+    });
+    init();
+  </script>
+</body>
+</html>
