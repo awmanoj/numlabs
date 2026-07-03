@@ -48,6 +48,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 
 ### Personality & Fun
 - [Birth year fun facts](tools/birth-year-facts/) — what released and happened the year you were born, plus the age you turn this year, your generation, Chinese zodiac, leap year, and Roman numerals
+- [Age on other planets](tools/age-on-planets/) — how old you are on Mercury, Venus, Mars, Jupiter and beyond, using each planet's real orbital period, plus your next birthday on each world
 
 ### Maths
 - [Golden ratio calculator](tools/golden-ratio/) — phi partners of any number, golden-ratio checks, golden rectangles, the "is your body golden?" test, phi to 1000 decimals, and Fibonacci convergence on 1.618

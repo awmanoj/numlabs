@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Age on Other Planets — How Old Are You on Mars? | 1618.dev</title>
+  <meta name="description" content="Enter your birthday and see how old you are on Mercury, Venus, Mars, Jupiter and beyond — plus your next birthday on each planet. Real orbital-period math, just for fun." />
+  <meta name="keywords" content="age on other planets, how old am i on mars, age on mars calculator, your age on other planets, age on mercury, planet age calculator, how old on jupiter, birthday on other planets, space age calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/age-on-planets/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Age on Other Planets — How Old Are You on Mars? | 1618.dev" />
+  <meta property="og:description" content="How old are you on Mars, Jupiter, or Mercury? Enter your birthday and find out — plus your next birthday on each planet." />
+  <meta property="og:url" content="https://1618.dev/tools/age-on-planets/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Age on Other Planets — 1618.dev" />
+  <meta name="twitter:description" content="How old are you on Mars? Your age across the solar system. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Age on Other Planets",
+    "description": "Enter your birthday to see how old you are on every planet — Mercury through Neptune, plus Pluto — using each body's real orbital period, with your next birthday on each.",
+    "url": "https://1618.dev/tools/age-on-planets/",
+    "applicationCategory": "EntertainmentApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Age on other planets</h2>
+      <p class="muted">Your age is just laps around the Sun. Swap Earth's orbit for another planet's and see how old you'd be there — and when your next birthday lands.</p>
+
+      <form id="form" class="card">
+        <label>
+          Your birthday
+          <input type="date" id="birthday" />
+        </label>
+      </form>
+
+      <p id="loading" class="muted">Loading Python…</p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="earth-label">On Earth you are</span>
+            <span id="earth-age">—</span>
+          </div>
+          <p class="muted" id="earth-days" style="margin-top:0.6rem">—</p>
+        </div>
+
+        <h3>Every world</h3>
+        <table>
+          <thead>
+            <tr><th>Planet</th><th>Your age</th><th>Its year</th><th>Next birthday</th></tr>
+          </thead>
+          <tbody id="planets"></tbody>
+        </table>
+        <p class="muted" id="fun-line" style="margin-top:0.8rem">—</p>
+      </div>
+
+      <h3>How this works</h3>
+      <p class="muted">
+        One birthday = one trip around the Sun. Mercury races round in just
+        <strong>88 Earth days</strong>, so it racks up birthdays fast; Neptune
+        takes <strong>165 Earth years</strong>, so almost nobody gets even one
+        Neptunian birthday. We take the exact Earth days you've been alive and
+        divide by each planet's <em>orbital period</em> (its year length in
+        Earth days). Pluto's here too — dwarf planet or not, it was too fun to
+        leave out.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../birth-year-facts/">Birth year fun facts</a>
+        <a href="../age-calculator/">Age calculator</a>
+        <a href="../days-until/">Days until</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">age on other planets</span>
+        <span class="kw">how old am i on mars</span>
+        <span class="kw">age on mars calculator</span>
+        <span class="kw">age on mercury</span>
+        <span class="kw">planet age calculator</span>
+        <span class="kw">how old on jupiter</span>
+        <span class="kw">birthday on other planets</span>
+        <span class="kw">space age calculator</span>
+        <span class="kw">your age across the solar system</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const num = new Intl.NumberFormat();
+    const pad = (n) => String(n).padStart(2, '0');
+    const EMOJI = {
+      Mercury: '☿️', Venus: '♀️', Earth: '🌎', Mars: '♂️', Jupiter: '🪐',
+      Saturn: '🪐', Uranus: '♅', Neptune: '♆', Pluto: '🌑',
+    };
+
+    let pyodide;
+
+    function isoDate(d) {
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    function prettyDate(iso) {
+      const [y, m, d] = iso.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString(undefined,
+        { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      document.getElementById('loading').hidden = true;
+      render();
+    }
+
+    function render() {
+      if (!pyodide) return;
+      const bday = document.getElementById('birthday').value;
+      const out = document.getElementById('output');
+      if (!bday) { out.hidden = true; return; }
+
+      const now = isoDate(new Date());
+      let r;
+      try {
+        const proxy = pyodide.runPython(
+          `logic.ages(${JSON.stringify(bday)}, ${JSON.stringify(now)})`);
+        r = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (e) {
+        out.hidden = true;
+        return; // future birthday etc. — just wait for valid input
+      }
+      out.hidden = false;
+
+      const planets = r.planets;
+      const earth = planets.find(p => p.name === 'Earth');
+      document.getElementById('earth-age').textContent = `${earth.age_years} years old`;
+      document.getElementById('earth-days').textContent =
+        `That's ${num.format(r.earth_days)} days around the Sun.`;
+
+      const tbody = document.getElementById('planets');
+      tbody.innerHTML = '';
+      for (const p of planets) {
+        const tr = document.createElement('tr');
+        if (p.name === 'Earth') tr.style.fontWeight = '600';
+        const label = `${EMOJI[p.name] || ''} ${p.name}${p.dwarf ? ' *' : ''}`;
+        tr.innerHTML =
+          `<td style="text-align:left" title="${p.note}">${label}</td>` +
+          `<td>${p.age_years}</td>` +
+          `<td>${p.period_earth_years} yr</td>` +
+          `<td>${prettyDate(p.next_birthday)}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      // A fun highlight: soonest non-Earth birthday coming up.
+      const soonest = planets
+        .filter(p => p.name !== 'Earth')
+        .reduce((a, b) => (b.days_to_next < a.days_to_next ? b : a));
+      document.getElementById('fun-line').innerHTML =
+        `Your next off-world birthday: <strong>${soonest.name}</strong> ` +
+        `in ${num.format(soonest.days_to_next)} days ` +
+        `(${prettyDate(soonest.next_birthday)}), when you turn ` +
+        `${soonest.next_age} there. <span class="muted">* Pluto is a dwarf planet.</span>`;
+    }
+
+    document.getElementById('form').addEventListener('input', render);
+    init();
+  </script>
+</body>
+</html>
