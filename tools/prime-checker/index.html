@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prime Number Checker — Is It Prime? Next & Previous Prime | 1618.dev</title>
+  <meta name="description" content="Check if a number is prime instantly. See the smallest factor if it isn't, the next and previous prime, the prime gap, twin-prime status, which prime it is, and how many primes are below it." />
+  <meta name="keywords" content="prime number checker, is this number prime, prime checker, next prime, previous prime, prime gap, twin prime, nth prime, prime counting, primality test, is it prime calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/prime-checker/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Prime Number Checker — Is It Prime? | 1618.dev" />
+  <meta property="og:description" content="Is your number prime? See its smallest factor, the next and previous prime, the gap, twin-prime status, and which prime it is." />
+  <meta property="og:url" content="https://1618.dev/tools/prime-checker/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Prime Number Checker — 1618.dev" />
+  <meta name="twitter:description" content="Is it prime? Smallest factor, next/previous prime, gap, and twin status. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Prime Number Checker",
+    "description": "Check whether a number is prime, and see its smallest factor, the next and previous prime, the prime gap, twin-prime status, which prime it is, and how many primes lie below it.",
+    "url": "https://1618.dev/tools/prime-checker/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Prime number checker</h2>
+      <p class="muted">Is your number prime? Find out — and see its smallest factor, its prime neighbours, whether it's a twin prime, and which prime it is.</p>
+
+      <form id="form" class="card">
+        <label>
+          Number
+          <input type="number" id="n" value="97" min="0" step="1" inputmode="numeric" />
+        </label>
+        <div class="chips" id="presets" aria-label="Try a number">
+          <button type="button" class="chip" data-n="97">97</button>
+          <button type="button" class="chip" data-n="561">561</button>
+          <button type="button" class="chip" data-n="7919">7919</button>
+          <button type="button" class="chip" data-n="1000000">1,000,000</button>
+          <button type="button" class="chip" data-n="982451653">982,451,653</button>
+        </div>
+      </form>
+
+      <p id="loading" class="muted">Loading Python…</p>
+      <p id="error" class="muted" hidden></p>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label" id="verdict-label">Result</span>
+            <span id="verdict">—</span>
+          </div>
+          <p class="muted" id="verdict-note" style="margin-top:0.6rem">—</p>
+        </div>
+
+        <table>
+          <tbody id="facts"></tbody>
+        </table>
+      </div>
+
+      <h3>What counts as prime</h3>
+      <p class="muted">
+        A <strong>prime</strong> is a whole number above 1 whose only divisors
+        are 1 and itself (2, 3, 5, 7, 11, …). Everything else above 1 is
+        <strong>composite</strong> — it has a smaller factor, which we show as
+        proof. By convention <strong>1 is neither</strong> prime nor composite,
+        and 2 is the only even prime. A <strong>twin prime</strong> is a prime
+        that sits just two away from another prime, like (11, 13) or (17, 19).
+        We test primality by trial division up to √n, so even nine-digit numbers
+        resolve instantly.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../../">← all tools</a>
+        <a href="../prime-factorization/">Prime factorization</a>
+        <a href="../roman-numeral/">Roman numerals</a>
+        <a href="../quadratic-equation/">Quadratic solver</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">prime number checker</span>
+        <span class="kw">is this number prime</span>
+        <span class="kw">prime checker</span>
+        <span class="kw">next prime</span>
+        <span class="kw">previous prime</span>
+        <span class="kw">prime gap</span>
+        <span class="kw">twin prime</span>
+        <span class="kw">nth prime</span>
+        <span class="kw">prime counting function</span>
+        <span class="kw">primality test</span>
+        <span class="kw">smallest prime factor</span>
+        <span class="kw">composite or prime</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const num = new Intl.NumberFormat();
+
+    // 1 → "1st", 2 → "2nd", 23 → "23rd" ...
+    function ordinal(n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    let pyodide;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      document.getElementById('loading').hidden = true;
+      render();
+    }
+
+    function render() {
+      if (!pyodide) return;
+      const raw = document.getElementById('n').value.trim();
+      const out = document.getElementById('output');
+      const err = document.getElementById('error');
+
+      if (raw === '') { out.hidden = true; err.hidden = true; return; }
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n < 0) {
+        out.hidden = true;
+        err.hidden = false;
+        err.textContent = 'Enter a whole number 0 or greater.';
+        return;
+      }
+
+      let r;
+      try {
+        const proxy = pyodide.runPython(`logic.check(${n})`);
+        r = proxy.toJs({ dict_converter: Object.fromEntries });
+        proxy.destroy();
+      } catch (e) {
+        out.hidden = true;
+        err.hidden = false;
+        err.textContent = String(e).replace(/^.*ValueError:\s*/s, '') || 'Number too large.';
+        return;
+      }
+      err.hidden = true;
+      out.hidden = false;
+
+      const label = document.getElementById('verdict-label');
+      const verdict = document.getElementById('verdict');
+      const note = document.getElementById('verdict-note');
+
+      if (r.n < 2) {
+        label.textContent = `${num.format(r.n)} is`;
+        verdict.textContent = 'neither prime nor composite';
+        note.textContent = r.n === 1
+          ? '1 is a unit — by convention it counts as neither.'
+          : '0 is neither prime nor composite.';
+      } else if (r.is_prime) {
+        label.textContent = `${num.format(r.n)} is`;
+        verdict.textContent = 'prime ✓';
+        note.textContent = r.prime_index
+          ? `It's the ${ordinal(r.prime_index)} prime number.`
+          : 'Its only divisors are 1 and itself.';
+      } else {
+        label.textContent = `${num.format(r.n)} is`;
+        verdict.textContent = 'not prime';
+        note.textContent = `It's composite — divisible by ${num.format(r.smallest_factor)}.`;
+      }
+
+      const rows = [];
+      if (r.is_prime && r.twin_with != null) {
+        rows.push(['Twin prime', `yes — pairs with ${num.format(r.twin_with)}`]);
+      } else if (r.is_prime) {
+        rows.push(['Twin prime', 'no']);
+      }
+      rows.push(['Next prime', `${num.format(r.next_prime)}  (+${num.format(r.gap_to_next)})`]);
+      if (r.prev_prime != null) {
+        rows.push(['Previous prime', `${num.format(r.prev_prime)}  (−${num.format(r.gap_from_prev)})`]);
+      } else {
+        rows.push(['Previous prime', 'none (2 is the smallest)']);
+      }
+      if (r.primes_below != null) {
+        const suffix = r.counts_capped ? '' : '';
+        rows.push([`Primes below ${num.format(r.n)}`, num.format(r.primes_below) + suffix]);
+      } else if (r.counts_capped) {
+        rows.push(['Primes below it', 'too large to count quickly']);
+      }
+
+      const tbody = document.getElementById('facts');
+      tbody.innerHTML = '';
+      for (const [k, v] of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<th style="text-align:left">${k}</th><td>${v}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById('form').addEventListener('input', render);
+    document.getElementById('presets').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-n]');
+      if (!btn) return;
+      document.getElementById('n').value = btn.dataset.n;
+      render();
+    });
+    init();
+  </script>
+</body>
+</html>

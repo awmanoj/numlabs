@@ -59,6 +59,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 - [Sierpinski triangle generator](tools/sierpinski-triangle/) — one fractal reached two ways: the random chaos game (half-steps to a corner) and deterministic recursive subdivision land on the same gasket; depth slider, live triangle-count (3ⁿ) and area-remaining ((3/4)ⁿ) stats, a Pascal's-triangle-mod-2 third route, zoom, recolour
 - [Koch snowflake generator](tools/koch-snowflake/) — edge-replacement fractal that traces itself slowly, segment by segment, at a pace you choose: classic snowflake (bumps out), anti-snowflake (bumps in), or a random coastline (each bump a coin flip) from the same rule; live segment count, perimeter (4/3)ⁿ growth, area → 8/5, and fractal dimension log4/log3
 - [Prime factorization](tools/prime-factorization/) — unique prime factors of any integer, with all divisors and divisor sum
+- [Prime number checker](tools/prime-checker/) — is a number prime? its smallest factor if not, the next and previous prime, the prime gap, twin-prime status, which prime it is, and how many primes lie below it
 - [Quadratic equation solver](tools/quadratic-equation/) — roots (real or complex), discriminant, vertex, axis of symmetry, and factored form of ax²+bx+c=0
 - [Roman numeral converter](tools/roman-numeral/) — convert a number to Roman numerals or decode a Roman numeral back to a number (1–3999)
 - [Triangle solver](tools/triangle-solver/) — solve any triangle from SSS, SAS, ASA, AAS or SSA inputs (sides, angles, perimeter, area)
