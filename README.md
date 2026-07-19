@@ -40,6 +40,7 @@ Pure static site. Each tool's logic is written in Python (`logic.py`) and runs i
 ### Health
 - [BMI calculator](tools/bmi/) — Body Mass Index from weight and height (metric or imperial)
 - [Age calculator](tools/age-calculator/) — exact age in years, months, days; total days, weeks, and months
+- [Protein & nutrition](tools/protein-nutrition/) — daily protein grams from body weight, plus calories, water, fat, carbs and fiber by activity and goal
 
 ### Everyday Life
 - [Reading time estimator](tools/reading-time/) — how long any text takes to read silently or speak aloud, with word, character, sentence, and paragraph counts

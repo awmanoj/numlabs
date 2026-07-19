@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1YEEJCL2E6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1YEEJCL2E6');
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Protein Intake Calculator — Daily Grams by Body Weight | 1618.dev</title>
+  <meta name="description" content="How much protein per day? Enter your body weight to get your daily protein target in grams (and per meal), plus calories, water, fat, carbs and fiber by activity and goal." />
+  <meta name="keywords" content="protein calculator, protein intake calculator, how much protein per day, grams of protein per day, protein per kg body weight, daily protein needs, macro calculator, protein for muscle gain, protein for fat loss, daily water intake calculator, fiber intake, macronutrient calculator" />
+  <link rel="canonical" href="https://1618.dev/tools/protein-nutrition/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Protein Intake Calculator — 1618.dev" />
+  <meta property="og:description" content="Enter your body weight for a daily protein target in grams (and per meal), plus calories, water, fat, carbs and fiber tuned to your activity and goal." />
+  <meta property="og:url" content="https://1618.dev/tools/protein-nutrition/" />
+  <meta property="og:site_name" content="1618.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Protein Intake Calculator — 1618.dev" />
+  <meta name="twitter:description" content="Daily protein grams by body weight, plus calories, water, fat, carbs and fiber. Free, runs in your browser." />
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Protein Intake Calculator",
+    "description": "Daily protein target in grams from body weight, plus calories, water, fat, carbs and fiber tuned to activity level and goal.",
+    "url": "https://1618.dev/tools/protein-nutrition/",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Any (browser-based)",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "1618.dev", "url": "https://1618.dev/" }
+  }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><a href="../../">1618.dev</a></h1>
+      <p class="tagline">small tools, one committed a day</p>
+    </header>
+
+    <main>
+      <h2>Daily Protein &amp; Nutrition</h2>
+      <p class="muted">How much protein — and everything else — you need per day, keyed to your body weight.</p>
+
+      <form id="form" class="card">
+        <div class="controls-grid">
+          <label>
+            <span id="weight-label">Weight (kg)</span>
+            <input type="number" id="weight" value="70" min="1" step="any" required />
+          </label>
+          <label>
+            Units
+            <select id="units">
+              <option value="kg" selected>kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </label>
+          <label>
+            Activity level
+            <select id="activity">
+              <option value="sedentary">Sedentary — little/no exercise</option>
+              <option value="light">Light — 1–3 days/week</option>
+              <option value="moderate" selected>Moderate — 3–5 days/week</option>
+              <option value="active">Active — 6–7 days/week</option>
+              <option value="athlete">Athlete — hard daily training</option>
+            </select>
+          </label>
+          <label>
+            Goal
+            <select id="goal">
+              <option value="maintain" selected>Maintain weight</option>
+              <option value="lose_fat">Lose fat</option>
+              <option value="build_muscle">Build muscle</option>
+            </select>
+          </label>
+          <label>
+            Meals per day
+            <input type="number" id="meals" value="3" min="1" max="10" step="1" />
+          </label>
+        </div>
+        <button type="submit" id="go" disabled>Loading Python…</button>
+      </form>
+
+      <div id="output" hidden>
+        <div class="card">
+          <div class="result">
+            <span class="label">Protein / day</span>
+            <span><span id="protein-rec">—</span> <span class="unit">g</span></span>
+          </div>
+          <p class="muted" style="margin-top:0.6rem">
+            Sensible range <span id="protein-range">—</span> ·
+            <span id="protein-perkg">—</span> g per kg ·
+            about <strong id="protein-permeal">—</strong> g per meal
+          </p>
+        </div>
+
+        <div class="stat-grid">
+          <div class="card stat">
+            <span class="label">Calories</span>
+            <span class="big"><span id="cal-target">—</span> <span class="unit">kcal</span></span>
+            <span class="muted small">maintenance ≈ <span id="cal-maint">—</span></span>
+          </div>
+          <div class="card stat">
+            <span class="label">Water</span>
+            <span class="big"><span id="water-l">—</span> <span class="unit">L</span></span>
+            <span class="muted small">≈ <span id="water-cups">—</span> cups</span>
+          </div>
+          <div class="card stat">
+            <span class="label">Fat</span>
+            <span class="big"><span id="fat-g">—</span> <span class="unit">g</span></span>
+            <span class="muted small"><span id="fat-pct">—</span>% of calories</span>
+          </div>
+          <div class="card stat">
+            <span class="label">Carbs</span>
+            <span class="big"><span id="carb-g">—</span> <span class="unit">g</span></span>
+            <span class="muted small"><span id="carb-perkg">—</span> g/kg</span>
+          </div>
+          <div class="card stat">
+            <span class="label">Fiber</span>
+            <span class="big"><span id="fiber-g">—</span> <span class="unit">g</span></span>
+            <span class="muted small">14 g per 1000 kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>How the protein number is set</h3>
+      <p class="muted">
+        Protein need is quoted as grams per kilogram of body weight and scales
+        with training: roughly <strong>0.8 g/kg</strong> if you're sedentary
+        (the RDA), <strong>1.2–1.6 g/kg</strong> for regular exercisers, and
+        <strong>1.6–2.2 g/kg</strong> for athletes. Eating in a deficit to lose
+        fat nudges it up — extra protein spares muscle — and building muscle
+        raises the floor. Everything else here is derived from your weight and
+        goal:
+      </p>
+      <div class="formula">
+        calories ≈ weight × activity factor (×0.80 to cut, ×1.10 to bulk) ·
+        water ≈ 33 ml/kg · fat ≈ 0.9 g/kg · carbs = leftover calories ·
+        fiber = 14 g / 1000 kcal
+      </div>
+      <p class="muted" style="margin-top:0.5rem">
+        These are general population starting points, not medical or dietitian
+        advice. Real needs shift with age, sex, body composition, kidney health
+        and medical conditions — if in doubt, check with a professional.
+      </p>
+    </main>
+
+    <footer>
+      <nav class="related">
+        <a href="../bmi/">BMI Calculator</a>
+        <a href="../age-calculator/">Age Calculator</a>
+        <a href="../../">← all tools</a>
+      </nav>
+      <div class="keywords" aria-label="Related topics">
+        <span class="kw">protein calculator</span>
+        <span class="kw">how much protein per day</span>
+        <span class="kw">grams of protein per day</span>
+        <span class="kw">protein per kg body weight</span>
+        <span class="kw">daily protein needs</span>
+        <span class="kw">macro calculator</span>
+        <span class="kw">protein for muscle gain</span>
+        <span class="kw">protein for fat loss</span>
+        <span class="kw">daily water intake</span>
+        <span class="kw">fiber intake calculator</span>
+        <span class="kw">macronutrient split</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    let pyodide;
+    let lastUnits = 'kg';
+
+    async function init() {
+      pyodide = await loadPyodide();
+      const code = await fetch('logic.py').then(r => r.text());
+      pyodide.FS.writeFile('logic.py', code);
+      pyodide.runPython('import logic');
+      const btn = document.getElementById('go');
+      btn.textContent = 'Calculate';
+      btn.disabled = false;
+      calculate();
+    }
+
+    function pyCall(expr) {
+      const proxy = pyodide.runPython(expr);
+      const value = proxy.toJs({ dict_converter: Object.fromEntries });
+      proxy.destroy();
+      return value;
+    }
+
+    function updateUnits() {
+      const units = document.getElementById('units').value;
+      if (units === lastUnits) return;
+      const weight = document.getElementById('weight');
+      const v = parseFloat(weight.value);
+      if (!isNaN(v)) {
+        weight.value = units === 'lb'
+          ? (v * 2.2046226218).toFixed(1)
+          : (v / 2.2046226218).toFixed(1);
+      }
+      document.getElementById('weight-label').textContent =
+        units === 'lb' ? 'Weight (lb)' : 'Weight (kg)';
+      lastUnits = units;
+      calculate();
+    }
+
+    function calculate(e) {
+      if (e) e.preventDefault();
+      if (!pyodide) return;
+      const weight = parseFloat(document.getElementById('weight').value);
+      const units = document.getElementById('units').value;
+      const activity = document.getElementById('activity').value;
+      const goal = document.getElementById('goal').value;
+      let meals = parseInt(document.getElementById('meals').value, 10);
+      if (isNaN(weight) || weight <= 0) return;
+      if (isNaN(meals) || meals < 1) meals = 1;
+
+      const r = pyCall(
+        `logic.plan(${weight}, '${units}', '${activity}', '${goal}', ${meals})`
+      );
+      const p = r.protein;
+      document.getElementById('protein-rec').textContent = p.rec_g;
+      document.getElementById('protein-range').textContent = `${p.low_g}–${p.high_g} g`;
+      document.getElementById('protein-perkg').textContent = p.rec_per_kg;
+      document.getElementById('protein-permeal').textContent = p.per_meal_g;
+      document.getElementById('cal-target').textContent = r.calories.target;
+      document.getElementById('cal-maint').textContent = r.calories.maintenance;
+      document.getElementById('water-l').textContent = r.water.rec_l;
+      document.getElementById('water-cups').textContent = r.water.cups;
+      document.getElementById('fat-g').textContent = r.fat.rec_g;
+      document.getElementById('fat-pct').textContent = r.fat.pct_of_target;
+      document.getElementById('carb-g').textContent = r.carbs.rec_g;
+      document.getElementById('carb-perkg').textContent = r.carbs.per_kg;
+      document.getElementById('fiber-g').textContent = r.fiber.rec_g;
+      document.getElementById('output').hidden = false;
+    }
+
+    document.getElementById('units').addEventListener('change', updateUnits);
+    document.getElementById('form').addEventListener('submit', calculate);
+    ['weight', 'activity', 'goal', 'meals'].forEach(id =>
+      document.getElementById(id).addEventListener('input', calculate));
+    init();
+  </script>
+</body>
+</html>
